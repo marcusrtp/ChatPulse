@@ -23,5 +23,8 @@ await test("stress fixtures keep a saturated chat and Twitch visual samples", ()
   assert.ok(messages.some((message) => message.badges.includes("vip")));
   assert.ok(messages.some((message) => message.badges.includes("subscriber")));
   assert.ok(messages.some((message) => message.fragments.some((fragment) => fragment.type === "emote" && fragment.emoteId)));
+  assert.ok(messages.some((message) => message.fragments.some((fragment) => fragment.type === "external-emote" && fragment.provider === "7TV")));
+  assert.ok(messages.some((message) => message.fragments.some((fragment) => fragment.type === "external-emote" && fragment.provider === "BTTV")));
+  assert.ok(messages.some((message) => message.fragments.some((fragment) => fragment.type === "external-emote" && fragment.provider === "FFZ")));
   assert.ok(messages.every((message) => message.author.startsWith("PseudoTresLong_")));
 });

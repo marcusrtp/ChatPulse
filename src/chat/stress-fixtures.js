@@ -36,6 +36,27 @@ const VISUAL_PATTERNS = Object.freeze([
       Object.freeze({ type: "emote", text: "Kappa", emoteId: "25" }),
       Object.freeze({ type: "text", text: " " }),
       Object.freeze({ type: "emote", text: "HeyGuys", emoteId: "30259" }),
+      Object.freeze({ type: "text", text: " " }),
+      Object.freeze({
+        type: "external-emote",
+        text: "wideVIBE",
+        provider: "7TV",
+        imageUrl: "https://cdn.7tv.app/emote/01G1GXCR380004YN3NKDRR9QHD/2x.webp",
+      }),
+      Object.freeze({ type: "text", text: " " }),
+      Object.freeze({
+        type: "external-emote",
+        text: "monkaS",
+        provider: "BTTV",
+        imageUrl: "https://cdn.betterttv.net/emote/56e9f494fff3cc5c35e5287e/2x",
+      }),
+      Object.freeze({ type: "text", text: " " }),
+      Object.freeze({
+        type: "external-emote",
+        text: "Pog",
+        provider: "FFZ",
+        imageUrl: "https://cdn.frankerfacez.com/emote/210748/2",
+      }),
     ]),
   }),
 ]);
