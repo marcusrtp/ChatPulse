@@ -68,8 +68,11 @@ export function createTwitchSessionController({
     }
 
     const expectedState = sessionStorageRef.getItem("chatpulse-twitch-oauth-state");
-    if (expectedState && token.state && token.state !== expectedState) {
+    if (!expectedState || token.state !== expectedState) {
       diagnostics.error("twitch", "Réponse OAuth ignorée : état de sécurité invalide.");
+      sessionStorageRef.removeItem("chatpulse-twitch-token");
+      sessionStorageRef.removeItem("chatpulse-twitch-oauth-state");
+      clearOAuthFragment();
       updateStatus("OAuth refusé");
       return;
     }
@@ -80,7 +83,7 @@ export function createTwitchSessionController({
       expiresAt: Date.now() + token.expiresIn * 1000,
     }));
     sessionStorageRef.removeItem("chatpulse-twitch-oauth-state");
-    windowRef.history.replaceState({}, windowRef.document.title, windowRef.location.pathname + windowRef.location.search);
+    clearOAuthFragment();
     updateStatus("OAuth prêt");
   }
 
@@ -101,6 +104,10 @@ export function createTwitchSessionController({
 
   function updateStatus(message) {
     statusElement.textContent = message;
+  }
+
+  function clearOAuthFragment() {
+    windowRef.history.replaceState({}, windowRef.document.title, windowRef.location.pathname + windowRef.location.search);
   }
 
   return { connectTwitchOAuth, startTwitchLive, processOAuthRedirect, twitchAccessToken, updateStatus };

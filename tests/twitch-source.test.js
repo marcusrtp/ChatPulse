@@ -7,6 +7,9 @@ const {
 const {
   createTwitchEventSubSource,
 } = await import("../src/twitch/eventsub-source.js");
+const {
+  createTwitchSessionController,
+} = await import("../src/twitch/session-controller.js");
 
 async function test(name, fn) {
   try {
@@ -48,6 +51,48 @@ await test("reads an OAuth token from the URL fragment only", () => {
   });
 
   assert.equal(readTwitchTokenFromUrl("http://127.0.0.1:8080/?access_token=bad"), null);
+});
+
+await test("OAuth redirect rejects missing state and clears the sensitive fragment", () => {
+  const sessionStorageRef = createMemoryStorage();
+  sessionStorageRef.setItem("chatpulse-twitch-oauth-state", "expected-state");
+  const diagnostics = [];
+  const replacedUrls = [];
+  const windowRef = {
+    location: {
+      href: "http://127.0.0.1:8080/?panel=1#access_token=abc123&scope=user%3Aread%3Achat&expires_in=3600",
+      origin: "http://127.0.0.1:8080",
+      pathname: "/",
+      search: "?panel=1",
+    },
+    document: { title: "ChatPulse" },
+    history: {
+      replaceState(_state, _title, nextUrl) {
+        replacedUrls.push(nextUrl);
+      },
+    },
+  };
+  const statusElement = { textContent: "" };
+  const controller = createTwitchSessionController({
+    diagnostics: {
+      error: (_component, message) => diagnostics.push(message),
+      warn: (_component, message) => diagnostics.push(message),
+    },
+    emit: () => {},
+    getConfig: () => ({ channel: "pantoufl", twitchClientId: "client-123" }),
+    renderDiagnostics: () => {},
+    statusElement,
+    windowRef,
+    sessionStorageRef,
+  });
+
+  controller.processOAuthRedirect();
+
+  assert.equal(controller.twitchAccessToken(), "");
+  assert.equal(sessionStorageRef.getItem("chatpulse-twitch-token"), null);
+  assert.equal(statusElement.textContent, "OAuth refusé");
+  assert.match(diagnostics[0], /état de sécurité invalide/);
+  assert.deepEqual(replacedUrls, ["/?panel=1"]);
 });
 
 await test("EventSub source resolves Twitch users, subscribes after welcome, and emits mapped events", async () => {
@@ -205,6 +250,21 @@ function jsonResponse(body, status = 200) {
     status,
     async json() {
       return body;
+    },
+  };
+}
+
+function createMemoryStorage() {
+  const store = new Map();
+  return {
+    getItem(key) {
+      return store.has(key) ? store.get(key) : null;
+    },
+    setItem(key, value) {
+      store.set(key, String(value));
+    },
+    removeItem(key) {
+      store.delete(key);
     },
   };
 }
