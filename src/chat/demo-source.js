@@ -41,7 +41,7 @@ const PREMIUM_TWITCH_TEST_MESSAGES = Object.freeze([
   },
   {
     author: "ComboPremium",
-    text: "Test complet : moderateur, VIP, abonne, emotes Twitch et couleur cyan.",
+    text: "Test complet : moderateur, VIP, abonne, emotes Twitch, emotes externes et couleur cyan.",
     badges: ["moderator", "vip", "subscriber"],
     color: "#06b6d4",
     fragments: [
@@ -49,6 +49,27 @@ const PREMIUM_TWITCH_TEST_MESSAGES = Object.freeze([
       { type: "emote", text: "Kappa", emoteId: "25" },
       { type: "text", text: " + " },
       { type: "emote", text: "HeyGuys", emoteId: "30259" },
+      { type: "text", text: " + " },
+      {
+        type: "external-emote",
+        text: "wideVIBE",
+        provider: "7TV",
+        imageUrl: "https://cdn.7tv.app/emote/01G1GXCR380004YN3NKDRR9QHD/2x.webp",
+      },
+      { type: "text", text: " " },
+      {
+        type: "external-emote",
+        text: "monkaS",
+        provider: "BTTV",
+        imageUrl: "https://cdn.betterttv.net/emote/56e9f494fff3cc5c35e5287e/2x",
+      },
+      { type: "text", text: " " },
+      {
+        type: "external-emote",
+        text: "Pog",
+        provider: "FFZ",
+        imageUrl: "https://cdn.frankerfacez.com/emote/210748/2",
+      },
     ],
   },
 ]);

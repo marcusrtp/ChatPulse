@@ -481,7 +481,7 @@ await test("demo chat source emits deterministic premium-looking test messages",
   assert.ok(emitted[0].payload.id.startsWith("demo-3000-"));
 });
 
-await test("demo chat source emits Twitch premium visual samples", () => {
+await test("demo chat source emits Twitch and external visual samples", () => {
   const emitted = [];
   const source = createDemoChatSource({
     now: () => 4000,
@@ -501,6 +501,7 @@ await test("demo chat source emits Twitch premium visual samples", () => {
   assert.equal(messages[0].color, "#22c55e");
   assert.equal(messages[0].fragments[1].type, "emote");
   assert.equal(messages[0].fragments[1].emoteId, "25");
+  assert.deepEqual(messages[3].fragments.filter((fragment) => fragment.type === "external-emote").map((fragment) => fragment.provider), ["7TV", "BTTV", "FFZ"]);
   assert.equal(emitted.length, 4);
   assert.equal(emitted[3].payload.author, "ComboPremium");
 });
