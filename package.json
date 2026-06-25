@@ -1,0 +1,12 @@
+﻿{
+  "name": "chatpulse",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/unit.test.js && node tests/moderation-audit.test.js && node tests/overlay-url-display.test.js && node tests/settings-presets.test.js && node tests/stress-fixtures.test.js && node tests/ui-views.test.js && node tests/external-emotes.test.js && node tests/twitch-eventsub-mapper.test.js && node tests/twitch-chat-assets.test.js && node tests/twitch-source.test.js",
+    "check": "node tools/build-targets.js && node tests/browser-smoke.js && node tests/unit.test.js && node tests/moderation-audit.test.js && node tests/overlay-url-display.test.js && node tests/settings-presets.test.js && node tests/stress-fixtures.test.js && node tests/ui-views.test.js && node tests/external-emotes.test.js && node tests/twitch-eventsub-mapper.test.js && node tests/twitch-chat-assets.test.js && node tests/twitch-source.test.js",
+    "dev": "node tools/dev-server.js"
+  }
+}
+

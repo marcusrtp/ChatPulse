@@ -1,0 +1,21 @@
+﻿<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatPulse OBS</title>
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/overlay.css">
+  </head>
+  <body data-page="overlay">
+    <main class="overlay-stage" id="overlay-stage">
+      <div class="overlay-debug" id="overlay-debug" hidden>
+        <strong>Mode démo</strong>
+        <span id="overlay-debug-text">En attente de messages de test</span>
+      </div>
+      <section class="overlay-feed" id="overlay-feed" aria-live="polite"></section>
+    </main>
+    <script type="module" src="src/ui/overlay-app.js"></script>
+  </body>
+</html>
+

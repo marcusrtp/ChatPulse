@@ -1,0 +1,325 @@
+﻿<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatPulse</title>
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/control.css">
+  </head>
+  <body data-page="control">
+    <main class="control-shell">
+      <div class="control-column left-column">
+      <section class="workspace-panel setup-panel panel-primary" aria-labelledby="setup-title">
+        <div class="panel-heading">
+          <p class="eyebrow">Overlay OBS</p>
+          <h1 id="setup-title">ChatPulse</h1>
+          <p class="lede">Prépare l'overlay, teste l'affichage et copie une URL OBS sans exposer de jeton sensible.</p>
+        </div>
+
+        <section class="url-box" aria-labelledby="overlay-url-title">
+          <div class="url-heading">
+            <span id="overlay-url-title">URL OBS</span>
+            <button id="copy-url-button" type="button">Copier</button>
+          </div>
+          <output id="overlay-url" tabindex="0" aria-live="polite"></output>
+          <span id="copy-url-status" class="copy-status" aria-live="polite"></span>
+        </section>
+
+        <form class="config-form" id="config-form">
+          <fieldset class="settings-group essential-settings">
+            <legend>Réglages de base</legend>
+            <div class="settings-grid">
+              <label>
+                Chaîne Twitch
+                <input id="channel-input" name="channel" autocomplete="off" placeholder="nom_de_chaine">
+              </label>
+
+              <label>
+                Couleur principale de l'overlay
+                <input id="accent-input" name="accentColor" type="color" value="#8b5cf6">
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="settings-group essential-settings preset-settings">
+            <legend>Profils rapides</legend>
+            <div id="preset-buttons" class="preset-grid" aria-label="Profils de réglages prêts à l'emploi">
+              <button type="button" data-preset-id="just-chatting" aria-pressed="false" aria-describedby="preset-tip-just-chatting">
+                <span>Just Chatting</span>
+                <small>Lisible et posé</small>
+                <span id="preset-tip-just-chatting" class="preset-tooltip" role="tooltip">Messages plus lisibles, plus confortables, adaptés à un écran où le chat peut prendre plus de place.</span>
+              </button>
+              <button type="button" data-preset-id="fps" aria-pressed="false" aria-describedby="preset-tip-fps">
+                <span>FPS</span>
+                <small>Compact</small>
+                <span id="preset-tip-fps" class="preset-tooltip" role="tooltip">Plus compact et discret pour ne pas cacher le jeu, le HUD ou la minimap.</span>
+              </button>
+              <button type="button" data-preset-id="mobile" aria-pressed="false" aria-describedby="preset-tip-mobile">
+                <span>Mobile</span>
+                <small>Grand texte</small>
+                <span id="preset-tip-mobile" class="preset-tooltip" role="tooltip">Texte plus gros, moins de messages, meilleure lisibilité sur petit écran.</span>
+              </button>
+              <button type="button" data-preset-id="minimal" aria-pressed="false" aria-describedby="preset-tip-minimal">
+                <span>Minimal</span>
+                <small>Léger</small>
+                <span id="preset-tip-minimal" class="preset-tooltip" role="tooltip">Overlay léger, peu visible, moins intrusif pendant le live.</span>
+              </button>
+              <button type="button" data-preset-id="big-screen" aria-pressed="false" aria-describedby="preset-tip-big-screen">
+                <span>Grand écran</span>
+                <small>Confort 16:9</small>
+                <span id="preset-tip-big-screen" class="preset-tooltip" role="tooltip">Rendu confortable pour une scène 16:9 avec plus d'espace.</span>
+              </button>
+            </div>
+            <span id="preset-status" class="preset-status" aria-live="polite">Choisis un profil pour régler le rendu d'un clic.</span>
+          </fieldset>
+
+          <fieldset class="settings-group essential-settings twitch-settings">
+            <legend>Connexion Twitch</legend>
+            <div class="settings-grid">
+              <label class="wide-field">
+                Client ID Twitch
+                <input id="twitch-client-id-input" name="twitchClientId" autocomplete="off" placeholder="à récupérer dans la console Twitch">
+              </label>
+            </div>
+            <div class="twitch-actions">
+              <button id="connect-twitch-button" type="button">Connecter Twitch</button>
+              <button id="start-live-button" type="button">Démarrer le live</button>
+              <span id="twitch-session-status" aria-live="polite">Mode démo actif</span>
+            </div>
+          </fieldset>
+
+          <fieldset class="settings-group essential-settings">
+            <legend>Flux des messages</legend>
+            <div class="settings-grid">
+              <div class="field-block">
+                <label for="lifetime-input">Durée des messages</label>
+                <input id="lifetime-input" name="messageLifetimeMs" type="range" min="5000" max="30000" step="1000">
+                <div id="lifetime-value" class="precise-value">
+                  <span>Valeur précise</span>
+                  <label for="lifetime-number-input">
+                    <input id="lifetime-number-input" class="precise-number" type="number" min="5" max="30" step="1" inputmode="numeric">
+                    <span>s</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="field-block">
+                <label for="max-messages-input">Nombre messages visible</label>
+                <input id="max-messages-input" name="maxMessages" type="range" min="1" max="24" step="1">
+                <div id="max-messages-value" class="precise-value">
+                  <span>Valeur précise</span>
+                  <label for="max-messages-number-input">
+                    <input id="max-messages-number-input" class="precise-number" type="number" min="1" max="24" step="1" inputmode="numeric">
+                    <span>messages</span>
+                  </label>
+                </div>
+              </div>
+
+              <label class="wide-field">
+                Sens d'apparition
+                <select id="message-order-input" name="messageOrder">
+                  <option value="bottom">Nouveaux messages en bas</option>
+                  <option value="top">Nouveaux messages en haut</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="settings-group essential-settings">
+            <legend>Placement OBS</legend>
+            <div class="settings-grid">
+              <label class="wide-field">
+                Position dans OBS
+                <select id="position-input" name="position">
+                  <option value="left">Gauche</option>
+                  <option value="center">Centre</option>
+                  <option value="right">Droite</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+
+          <details class="settings-disclosure">
+            <summary>Personnalisation avancée</summary>
+            <fieldset class="settings-group compact-settings">
+            <legend>Apparence des cartes</legend>
+            <div class="settings-grid">
+              <label>
+                Style des messages
+                <select id="density-input" name="density">
+                  <option value="compact">Compact</option>
+                  <option value="comfortable">Confortable</option>
+                </select>
+              </label>
+
+              <div class="field-block">
+                <label for="font-scale-input">Taille du texte</label>
+                <input id="font-scale-input" name="fontScale" type="range" min="80" max="140" step="5">
+                <div id="font-scale-value" class="precise-value">
+                  <span>Valeur précise</span>
+                  <label for="font-scale-number-input">
+                    <input id="font-scale-number-input" class="precise-number" type="number" min="80" max="140" step="5" inputmode="numeric">
+                    <span>%</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="field-block">
+                <label for="gap-input">Espacement</label>
+                <input id="gap-input" name="gapPx" type="range" min="4" max="24" step="1">
+                <div id="gap-value" class="precise-value">
+                  <span>Valeur précise</span>
+                  <label for="gap-number-input">
+                    <input id="gap-number-input" class="precise-number" type="number" min="4" max="24" step="1" inputmode="numeric">
+                    <span>px</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="field-block">
+                <label for="opacity-input">Opacité du fond</label>
+                <input id="opacity-input" name="backgroundOpacity" type="range" min="0" max="100" step="5">
+                <div id="opacity-value" class="precise-value">
+                  <span>Valeur précise</span>
+                  <label for="opacity-number-input">
+                    <input id="opacity-number-input" class="precise-number" type="number" min="0" max="100" step="5" inputmode="numeric">
+                    <span>%</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="field-block">
+                <label for="radius-input">Arrondi des cartes</label>
+                <input id="radius-input" name="radiusPx" type="range" min="0" max="24" step="1">
+                <div id="radius-value" class="precise-value">
+                  <span>Valeur précise</span>
+                  <label for="radius-number-input">
+                    <input id="radius-number-input" class="precise-number" type="number" min="0" max="24" step="1" inputmode="numeric">
+                    <span>px</span>
+                  </label>
+                </div>
+              </div>
+
+              <label>
+                Animation
+                <select id="animation-input" name="animation">
+                  <option value="slide">Glissement</option>
+                  <option value="fade">Fondu</option>
+                  <option value="none">Aucune</option>
+                </select>
+              </label>
+            </div>
+            </fieldset>
+          </details>
+
+          <fieldset class="settings-group essential-settings">
+            <legend>Options OBS</legend>
+            <div class="settings-grid options-grid">
+              <label class="toggle-row">
+                <input id="debug-input" name="debug" type="checkbox">
+                <span>Afficher le diagnostic dans OBS</span>
+              </label>
+
+              <label class="toggle-row">
+                <input id="show-meta-input" name="showMeta" type="checkbox">
+                <span>Afficher le badge DEMO/LIVE</span>
+              </label>
+
+              <label class="toggle-row">
+                <input id="notifications-input" name="notifications" type="checkbox">
+                <span>Activer les notifications OBS</span>
+              </label>
+
+              <label class="toggle-row">
+                <input id="twitch-visuals-input" name="twitchVisuals" type="checkbox">
+                <span>Badges et emotes Twitch officiels <small>option gratuite</small></span>
+              </label>
+
+              <label class="toggle-row">
+                <input id="external-emotes-input" name="externalEmotes" type="checkbox">
+                <span>Emotes externes 7TV, BTTV et FFZ <small>option gratuite</small></span>
+              </label>
+            </div>
+          </fieldset>
+        </form>
+
+      </section>
+
+      <section class="workspace-panel history-panel compact-feed-panel" aria-labelledby="history-title">
+        <div class="panel-heading compact">
+          <p class="eyebrow">Historique</p>
+          <h2 id="history-title">Messages reçus</h2>
+        </div>
+        <ol id="message-history" class="message-history"></ol>
+      </section>
+      </div>
+
+      <div class="control-column right-column">
+      <section class="workspace-panel preview-panel" aria-labelledby="preview-title">
+        <div class="panel-heading compact">
+          <p class="eyebrow">Aperçu live</p>
+          <h2 id="preview-title">Rendu OBS</h2>
+        </div>
+
+        <div class="action-stack preview-actions">
+          <div class="action-grid primary-actions">
+            <button id="test-message-button" class="primary-action" type="button">Messages de test</button>
+            <button id="obs-notification-button" type="button">Tester alerte OBS</button>
+            <button id="simulate-automod-button" type="button" aria-pressed="false">Activer AutoMod</button>
+          </div>
+
+          <div class="action-grid secondary-actions">
+            <button id="stress-test-button" type="button">Lancer stress test</button>
+            <button id="simulate-delete-button" type="button">Simuler suppression</button>
+            <button id="simulate-warning-button" type="button">Simuler alerte</button>
+            <button id="simulate-error-button" type="button">Simuler erreur</button>
+          </div>
+        </div>
+
+        <div class="preview-block">
+          <div class="preview-heading">
+            <span>Aperçu</span>
+            <span id="message-count">0 message</span>
+          </div>
+          <div class="queue-stats" aria-live="polite">
+            <span id="visible-count">0 visible</span>
+            <span id="pending-count">0 en attente</span>
+            <span id="displayed-count">0 affiché</span>
+            <span id="deleted-count">0 supprimé</span>
+            <span id="blocked-count">0 bloqué</span>
+          </div>
+          <div class="chat-preview" id="chat-preview" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="workspace-panel status-panel" aria-labelledby="status-title">
+        <div class="panel-heading compact">
+          <p class="eyebrow">État</p>
+          <h2 id="status-title">Prêt à vérifier</h2>
+        </div>
+
+        <div class="status-grid" id="status-grid"></div>
+
+        <div class="moderation-block">
+          <div>
+            <span>Modération freemium</span>
+            <strong>Protection active</strong>
+          </div>
+          <p>Les messages supprimés, bannis ou bloqués ne restent pas affichés. Le diagnostic Twitch détaillé sera une option premium.</p>
+        </div>
+      </section>
+
+      <section class="workspace-panel log-panel compact-feed-panel" aria-labelledby="log-title">
+        <div class="panel-heading compact">
+          <p class="eyebrow">Journal</p>
+          <h2 id="log-title">Événements de diagnostic</h2>
+        </div>
+        <ol id="event-log" class="event-log"></ol>
+      </section>
+      </div>
+    </main>
+    <script type="module" src="src/ui/control-app.js"></script>
+  </body>
+</html>
+
