@@ -1,4 +1,4 @@
-﻿import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -64,6 +64,7 @@ const incompleteMarkers = new RegExp(["TO" + "DO", "T" + "BD", "a compl" + "eter
 
 for (const file of expectedFiles.filter((name) => name.endsWith(".js") || name.endsWith(".html") || name.endsWith(".css") || name.endsWith(".md"))) {
   const content = readFileSync(join(root, file), "utf8");
+  assert.notEqual(content.charCodeAt(0), 0xfeff, `${file} should not start with a UTF-8 BOM`);
   assert.equal(incompleteMarkers.test(content), false, `${file} should not contain incomplete markers`);
 }
 

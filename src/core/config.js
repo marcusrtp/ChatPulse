@@ -1,4 +1,4 @@
-﻿export const DEFAULT_CONFIG = Object.freeze({
+export const DEFAULT_CONFIG = Object.freeze({
   channel: "",
   twitchClientId: "",
   accentColor: "#8b5cf6",

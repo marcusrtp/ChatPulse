@@ -1,4 +1,4 @@
-﻿export function createEventBus() {
+export function createEventBus() {
   const listeners = new Map();
 
   function on(eventName, handler) {

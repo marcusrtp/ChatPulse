@@ -1,4 +1,4 @@
-﻿const STATUS_WEIGHT = {
+const STATUS_WEIGHT = {
   idle: 0,
   ok: 1,
   warning: 2,

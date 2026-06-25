@@ -1,4 +1,4 @@
-﻿import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 
 const { createEventBus } = await import("../src/core/event-bus.js");
 const { createDiagnostics } = await import("../src/core/diagnostics.js");

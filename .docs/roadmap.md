@@ -35,10 +35,9 @@ Pourquoi cet ordre : la personnalisation avancee devient utile quand la base fia
 Objectif : transformer ChatPulse en outil de diagnostic live, pas seulement en overlay demo.
 
 10. Rendre l'OAuth plus explicite dans l'interface : expliquer ce que la connexion apporte avant de demander au streamer de se connecter.
-11. Ajouter un statut clair des visuels Twitch : badges de chaine charges, emotes chargees, fallback utilise.
-12. Mettre en cache les badges et emotes par chaine pour eviter les rechargements inutiles.
-13. Diagnostic Twitch pro : recus, affiches, supprimes, moderation, trous, retard, statut des badges/emotes et fallback utilise.
-14. Verification des assets Twitch reels par chaine : badges abonne, badges fondateur, badges bits, emotes et couleurs.
+11. Mettre en cache les badges et emotes par chaine pour eviter les rechargements inutiles.
+12. Diagnostic Twitch pro : recus, affiches, supprimes, moderation, trous, retard, statut des badges/emotes et fallback utilise.
+13. Verification des assets Twitch reels par chaine : badges abonne, badges fondateur, badges bits, emotes et couleurs.
 
 Pourquoi cet ordre : les badges et emotes sont importants, mais le vrai avantage concurrentiel vient d'abord du diagnostic fiable sur les messages et la moderation.
 
@@ -231,13 +230,13 @@ Etat actuel :
 - option d'interface `Emotes externes 7TV, BTTV et FFZ` deja presente dans `Options OBS` ;
 - les badges Twitch officiels sont charges avec OAuth via badges globaux et badges de chaine ;
 - les badges abonnes dedies a chaque streamer sont recuperables quand la chaine est connectee ;
+- le panneau `Visuels Twitch` affiche OAuth, badges officiels, badges abonnes/fallback et emotes externes ;
 - l'apercu local affiche de vrais badges CDN Twitch pour moderateur et VIP ;
 - le bouton de test et le stress test incluent badges, couleurs, emotes Twitch et emotes externes ;
 - 7TV, BetterTTV et FrankerFaceZ sont resolus cote live quand l'option externe est activee.
 
 Restes utiles :
 
-- afficher dans l'interface un statut clair `badges de chaine charges / fallback utilise` ;
 - mettre en cache les badges par chaine pour eviter les rechargements inutiles ;
 - exposer dans le diagnostic premium la version exacte utilisee, par exemple `subscriber/6` ;
 - ajouter une explication courte dans l'UI avant OAuth pour dire ce que la connexion apporte aux badges.
@@ -448,6 +447,7 @@ Ce socle doit rester vrai a chaque evolution majeure :
 - historique consultable pour comprendre les messages affiches, supprimes, bloques ou retires ;
 - visuels Twitch de base gratuits : badges moderateur/VIP/abonne, emotes et couleurs de pseudo activables sans offre payante ;
 - vrais badges Twitch avec OAuth : badges globaux et badges dedies a la chaine charges depuis Twitch quand l'option officielle est activee ;
+- panneau `Visuels Twitch` : etat OAuth, badges officiels, badges de chaine/fallback et emotes externes visibles dans l'interface ;
 - apercu local des badges : vrais badges CDN Twitch pour moderateur et VIP, fallback generique pour abonne sans chaine connectee ;
 - emotes externes gratuites : 7TV, BetterTTV et FrankerFaceZ chargees en live quand l'option externe est activee ;
 - registre premium en place pour verrouiller proprement une option plus tard sans exposer de donnee dans l'URL OBS ;
@@ -472,13 +472,12 @@ Deja implemente :
 - emotes Twitch officielles ;
 - couleurs de pseudo Twitch ;
 - emotes externes 7TV, BetterTTV et FrankerFaceZ ;
+- panneau `Visuels Twitch` pour voir si les assets reels sont charges ou si ChatPulse utilise un fallback ;
 - exemples de test avec badges CDN Twitch moderateur/VIP, emotes Twitch et emotes externes ;
 - registre central pour rendre une option premium plus tard.
 
 Pas encore assez visible dans l'interface :
 
-- statut clair des badges officiels charges par chaine ;
-- indication `fallback utilise` quand Twitch ne renvoie pas un asset ;
 - explication avant OAuth de ce que la connexion debloque ;
 - export diagnostic complet ;
 - rapport apres incident.

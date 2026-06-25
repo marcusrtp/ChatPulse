@@ -1,4 +1,4 @@
-﻿# ChatPulse
+# ChatPulse
 
 MVP statique pour un overlay chat Twitch/OBS oriente fiabilite et diagnostic.
 
@@ -19,6 +19,7 @@ Le premier sprint prouve la valeur principale sans cout serveur : afficher un ov
 - Badges Twitch officiels : en live OAuth, ChatPulse charge les badges globaux et les badges dedies a la chaine, dont les badges abonnes propres au streamer.
 - Apercu local des badges : les tests visuels utilisent de vrais badges CDN Twitch pour moderateur et VIP ; le badge abonne reste generique sans chaine connectee.
 - Emotes externes gratuites : l'option `Emotes externes 7TV, BTTV et FFZ` charge 7TV, BetterTTV et FrankerFaceZ quand le live Twitch est connecte.
+- Statut visuels Twitch : le panneau affiche si OAuth est connecte, si les badges officiels/chaine sont charges et si les emotes externes utilisent un fallback.
 - Stress test Twitch : la rafale inclut badges, couleurs de pseudo, emotes Twitch et emotes externes pour verifier le rendu visuel en saturation.
 - Profils rapides : Just Chatting, FPS, Mobile, Minimal et Grand ecran appliquent des reglages d'affichage sans toucher aux donnees Twitch sensibles.
 - Options premium verrouillables : un registre central permet de passer n'importe quel reglage en premium sans exposer la valeur dans l'URL OBS.
@@ -54,6 +55,7 @@ Ouvre ensuite `http://127.0.0.1:8080/`. OBS doit utiliser une URL HTTP locale pl
 8. Colle l'URL, puis ajuste largeur et hauteur.
 9. Garde le panneau ouvert pendant les tests : les reglages et boutons de test sont envoyes a l'overlay deja charge.
 10. Surveille la carte `OBS` : elle confirme si la source OBS est detectee et si la derniere commande a ete recue.
+11. Surveille aussi `Visuels Twitch` pour savoir si ChatPulse utilise les assets reels ou un fallback.
 
 ## Etat des visuels Twitch
 
@@ -61,6 +63,7 @@ Ouvre ensuite `http://127.0.0.1:8080/`. OBS doit utiliser une URL HTTP locale pl
 - Avec OAuth et option Twitch activee : ChatPulse recupere les badges officiels globaux et les badges de la chaine via Twitch.
 - Les badges abonnes reels dependent de chaque chaine ; ils sont donc fiables quand la chaine est connectee.
 - Les emotes externes 7TV, BTTV et FFZ sont chargees separement quand l'option externe est activee.
+- Le panneau `Visuels Twitch` donne un etat direct : non connecte, apercu local, assets charges ou fallback actif.
 - La partie premium future ne doit pas bloquer ces visuels : elle doit plutot ajouter diagnostic, cache, verification et export.
 
 ## Securite

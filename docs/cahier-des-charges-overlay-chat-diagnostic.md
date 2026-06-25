@@ -1,4 +1,4 @@
-﻿# Cahier des charges - ChatPulse
+# Cahier des charges - ChatPulse
 
 Date : 2026-06-25
 Statut : Specification produit initiale, avant implementation

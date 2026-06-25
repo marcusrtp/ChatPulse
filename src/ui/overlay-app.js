@@ -1,4 +1,4 @@
-﻿import { normalizeConfig } from "../core/config.js";
+import { normalizeConfig } from "../core/config.js";
 import { createEventBus } from "../core/event-bus.js";
 import { LIVE_CONFIG_STORAGE_KEY, readLiveConfig } from "../core/live-config.js";
 import { LIVE_COMMAND_STORAGE_KEY, readLiveCommand } from "../core/live-command.js";

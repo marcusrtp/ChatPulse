@@ -1,4 +1,4 @@
-﻿import { createEventBus } from "../core/event-bus.js";
+import { createEventBus } from "../core/event-bus.js";
 import { createDiagnostics } from "../core/diagnostics.js";
 import { createOverlayUrl, loadConfig } from "../core/config.js";
 import { readLiveConfig, writeLiveConfig } from "../core/live-config.js";
