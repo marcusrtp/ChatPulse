@@ -1,4 +1,6 @@
-﻿const SAMPLE_MESSAGES = [
+import { twitchPreviewBadges } from "../twitch/preview-badges.js";
+
+const SAMPLE_MESSAGES = [
   ["NovaCaster", "Overlay en ligne, le chat est lisible."],
   ["PixelMod", "Message de test reçu avant le live."],
   ["SubSignal", "Le panneau de diagnostic indique que tout est sain."],
@@ -9,7 +11,7 @@ const PREMIUM_TWITCH_TEST_MESSAGES = Object.freeze([
   {
     author: "ModLuna",
     text: "Badge moderateur visible avec couleur verte et emote Kappa.",
-    badges: ["moderator"],
+    badges: twitchPreviewBadges(["moderator"]),
     color: "#22c55e",
     fragments: [
       { type: "text", text: "Badge moderateur visible " },
@@ -20,7 +22,7 @@ const PREMIUM_TWITCH_TEST_MESSAGES = Object.freeze([
   {
     author: "VipNova",
     text: "Badge VIP visible avec couleur rose et emote HeyGuys.",
-    badges: ["vip"],
+    badges: twitchPreviewBadges(["vip"]),
     color: "#ec4899",
     fragments: [
       { type: "text", text: "Badge VIP visible " },
@@ -31,7 +33,7 @@ const PREMIUM_TWITCH_TEST_MESSAGES = Object.freeze([
   {
     author: "SubSignal",
     text: "Badge abonne visible avec couleur violette et emote LUL.",
-    badges: ["subscriber"],
+    badges: twitchPreviewBadges(["subscriber"]),
     color: "#8b5cf6",
     fragments: [
       { type: "text", text: "Badge abonne visible " },
@@ -42,7 +44,7 @@ const PREMIUM_TWITCH_TEST_MESSAGES = Object.freeze([
   {
     author: "ComboPremium",
     text: "Test complet : moderateur, VIP, abonne, emotes Twitch, emotes externes et couleur cyan.",
-    badges: ["moderator", "vip", "subscriber"],
+    badges: twitchPreviewBadges(["moderator", "vip", "subscriber"]),
     color: "#06b6d4",
     fragments: [
       { type: "text", text: "Test complet : MOD VIP SUB " },

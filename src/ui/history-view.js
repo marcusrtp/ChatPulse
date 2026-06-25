@@ -1,3 +1,5 @@
+import { appendMessageContent, renderBadges } from "./rich-message-rendering.js";
+
 export function createHistoryView({ listElement, documentRef = globalThis.document, maxItems = 200 }) {
   listElement.addEventListener?.("click", (event) => {
     const item = event.target.closest?.(".history-revealable");
@@ -32,7 +34,7 @@ export function renderHistoryItem(message, { documentRef = globalThis.document }
 
   item.className = `history-${moderationStatus}`;
   text.dataset.historyText = "";
-  author.textContent = message.author;
+  renderHistoryAuthor(author, message, documentRef);
 
   if (message.source === "notification") {
     status.textContent = "Alerte OBS";
@@ -48,11 +50,37 @@ export function renderHistoryItem(message, { documentRef = globalThis.document }
     makeModeratedHistoryItem(item, text, message, "Message retiré suite à un ban, timeout ou clear chat. Clique pour voir le contenu original.");
   } else {
     status.textContent = "Reçu";
-    text.textContent = message.text;
+    renderHistoryMessageContent(text, message, documentRef);
   }
 
   item.append(author, status, text);
   return item;
+}
+
+function renderHistoryMessageContent(target, message, documentRef) {
+  target.replaceChildren?.();
+  appendMessageContent(target, message, {
+    documentRef,
+    twitchVisuals: true,
+    externalEmotes: true,
+  });
+}
+
+function renderHistoryAuthor(author, message, documentRef) {
+  const badgeList = renderBadges(message.badges, {
+    documentRef,
+    className: "chat-badges history-badges",
+  });
+
+  if (!badgeList) {
+    author.textContent = message.author;
+    return;
+  }
+
+  const name = documentRef.createElement("span");
+  name.textContent = message.author;
+  author.className = "history-author";
+  author.replaceChildren(badgeList, name);
 }
 
 export function toggleModeratedHistoryReveal(item) {

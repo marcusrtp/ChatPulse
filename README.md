@@ -15,9 +15,11 @@ Le premier sprint prouve la valeur principale sans cout serveur : afficher un ov
 - Handshake OBS : le panneau detecte si l'overlay OBS charge est vivant, si les reglages correspondent et si les commandes sont recues.
 - Maintenabilite : le panneau delegue le formulaire, le handshake OBS, la session Twitch et les actions de simulation a des modules dedies.
 - Simulations live isolees : stress test, notification OBS, suppression test et AutoMod restent testables hors du controle principal.
-- Visuels Twitch gratuits : un interrupteur active badges, couleurs de pseudo et emotes, avec badges officiels si OAuth peut les charger.
-- Emotes externes gratuites : une option separee active 7TV, BetterTTV et FrankerFaceZ quand le live Twitch est connecte.
-- Stress test Twitch : la rafale inclut aussi badges, couleurs de pseudo et emotes pour verifier le rendu visuel en saturation.
+- Visuels Twitch gratuits : l'option `Badges et emotes Twitch officiels` active badges, couleurs de pseudo et emotes.
+- Badges Twitch officiels : en live OAuth, ChatPulse charge les badges globaux et les badges dedies a la chaine, dont les badges abonnes propres au streamer.
+- Apercu local des badges : les tests visuels utilisent de vrais badges CDN Twitch pour moderateur et VIP ; le badge abonne reste generique sans chaine connectee.
+- Emotes externes gratuites : l'option `Emotes externes 7TV, BTTV et FFZ` charge 7TV, BetterTTV et FrankerFaceZ quand le live Twitch est connecte.
+- Stress test Twitch : la rafale inclut badges, couleurs de pseudo, emotes Twitch et emotes externes pour verifier le rendu visuel en saturation.
 - Profils rapides : Just Chatting, FPS, Mobile, Minimal et Grand ecran appliquent des reglages d'affichage sans toucher aux donnees Twitch sensibles.
 - Options premium verrouillables : un registre central permet de passer n'importe quel reglage en premium sans exposer la valeur dans l'URL OBS.
 - Couverture actuelle : configuration, URL OBS, moderation, EventSub, historique, diagnostic, handshake OBS et smoke HTML/CSS.
@@ -44,12 +46,22 @@ Ouvre ensuite `http://127.0.0.1:8080/`. OBS doit utiliser une URL HTTP locale pl
 
 1. Ouvre la page de controle `index.html`.
 2. Configure la chaine, la couleur et le mode debug.
-3. Clique sur `Message de test`.
-4. Copie l'URL OBS generee.
-5. Ajoute une source `Browser Source` dans OBS.
-6. Colle l'URL, puis ajuste largeur et hauteur.
-7. Garde le panneau ouvert pendant les tests : les reglages et boutons de test sont envoyes a l'overlay deja charge.
-8. Surveille la carte `OBS` : elle confirme si la source OBS est detectee et si la derniere commande a ete recue.
+3. Dans `Options OBS`, coche `Badges et emotes Twitch officiels` si tu veux voir les badges/emotes/couleurs.
+4. Coche `Emotes externes 7TV, BTTV et FFZ` si tu veux tester les emotes externes.
+5. Clique sur `Message de test`.
+6. Copie l'URL OBS generee.
+7. Ajoute une source `Browser Source` dans OBS.
+8. Colle l'URL, puis ajuste largeur et hauteur.
+9. Garde le panneau ouvert pendant les tests : les reglages et boutons de test sont envoyes a l'overlay deja charge.
+10. Surveille la carte `OBS` : elle confirme si la source OBS est detectee et si la derniere commande a ete recue.
+
+## Etat des visuels Twitch
+
+- Sans OAuth : ChatPulse affiche l'apercu, les fallbacks visuels et les messages de test.
+- Avec OAuth et option Twitch activee : ChatPulse recupere les badges officiels globaux et les badges de la chaine via Twitch.
+- Les badges abonnes reels dependent de chaque chaine ; ils sont donc fiables quand la chaine est connectee.
+- Les emotes externes 7TV, BTTV et FFZ sont chargees separement quand l'option externe est activee.
+- La partie premium future ne doit pas bloquer ces visuels : elle doit plutot ajouter diagnostic, cache, verification et export.
 
 ## Securite
 
@@ -65,7 +77,7 @@ Ouvre ensuite `http://127.0.0.1:8080/`. OBS doit utiliser une URL HTTP locale pl
 - `overlay.html` : page transparente pour OBS.
 - `src/core` : logique testable et reutilisable.
 - `src/chat` : sources de messages et resolution des emotes externes.
-- `src/twitch` : OAuth, EventSub, session Twitch, assets de badges et mapping moderation.
+- `src/twitch` : OAuth, EventSub, session Twitch, assets de badges, badges d'aperçu et mapping moderation.
 - `src/ui` : branchement DOM, formulaire de controle, diagnostic OBS et vues.
 - `styles` : presentation.
 - `tests` : tests sans dependances externes.

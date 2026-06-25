@@ -15,6 +15,7 @@ import { previewHeightForCapacity } from "./preview-capacity.js";
 import { createPremiumLockController } from "./premium-locks.js";
 import { applySettingsPreset, getSettingsPreset } from "./settings-presets.js";
 import { createSimulationActions } from "./simulation-actions.js";
+import { createTwitchVisualStatusView } from "./twitch-visual-status-view.js";
 
 const bus = createEventBus();
 const diagnostics = createDiagnostics();
@@ -25,6 +26,7 @@ const demoSource = createDemoChatSource({ emit: bus.emit });
 let renderer;
 let simulationActions;
 let obsMonitor;
+let twitchVisualAssets = {};
 
 const elements = {
   form: document.querySelector("#config-form"),
@@ -68,6 +70,7 @@ const elements = {
   twitchSessionStatus: document.querySelector("#twitch-session-status"),
   statusTitle: document.querySelector("#status-title"),
   statusGrid: document.querySelector("#status-grid"),
+  visualStatusList: document.querySelector("#visual-status-list"),
   eventLog: document.querySelector("#event-log"),
   messageCount: document.querySelector("#message-count"),
   visibleCount: document.querySelector("#visible-count"),
@@ -90,6 +93,9 @@ const diagnosticsView = createDiagnosticsView({
   statusTitle: elements.statusTitle,
   statusGrid: elements.statusGrid,
   eventLog: elements.eventLog,
+});
+const twitchVisualStatusView = createTwitchVisualStatusView({
+  listElement: elements.visualStatusList,
 });
 const controlForm = createControlForm(elements, { optionLocks });
 const premiumLockController = createPremiumLockController({ elements, optionLocks });
@@ -135,6 +141,7 @@ applyAccent(config.accentColor);
 diagnostics.info("overlay", "Centre de contrôle chargé");
 diagnostics.warn("twitch", twitchSession.twitchAccessToken() ? "OAuth Twitch prêt. Démarre le live quand tu veux." : "OAuth Twitch non connecté. Le mode démo est actif.");
 renderDiagnostics();
+renderTwitchVisualStatus();
 simulationActions.updateAutomodButtonLabel();
 updateOverlayUrl();
 obsMonitor.start();
@@ -155,6 +162,10 @@ bus.on("chat:moderation", (event) => {
   renderer.applyModeration(event);
   diagnostics.warn("twitch", simulationActions.moderationLogMessage(event));
   refreshLivePanels();
+});
+
+bus.on("twitch:visuals", (payload) => {
+  updateTwitchVisualAssets(payload);
 });
 
 elements.form.addEventListener("input", (event) => {
@@ -185,6 +196,7 @@ function commitFormConfig() {
   publishLiveConfig(nextConfig);
   updateOverlayUrl();
   controlForm.updateCustomizationLabels(nextConfig);
+  renderTwitchVisualStatus(nextConfig);
 }
 
 elements.testButton.addEventListener("click", () => {
@@ -228,6 +240,8 @@ elements.connectTwitchButton.addEventListener("click", () => {
 });
 
 elements.startLiveButton.addEventListener("click", () => {
+  twitchVisualAssets = {};
+  renderTwitchVisualStatus();
   twitchSession.startTwitchLive();
 });
 
@@ -371,8 +385,27 @@ function refreshLivePanels() {
   updateQueueStats(renderer.getStats());
   renderMessageHistory();
   renderDiagnostics();
+  renderTwitchVisualStatus();
 }
 
 function renderDiagnostics() {
   diagnosticsView.render(diagnostics.snapshot());
+}
+
+function updateTwitchVisualAssets(payload = {}) {
+  if (payload.kind === "badges") {
+    twitchVisualAssets = { ...twitchVisualAssets, badges: payload };
+  }
+  if (payload.kind === "external-emotes") {
+    twitchVisualAssets = { ...twitchVisualAssets, externalEmotes: payload };
+  }
+  renderTwitchVisualStatus();
+}
+
+function renderTwitchVisualStatus(nextConfig = readFormConfig()) {
+  twitchVisualStatusView.render({
+    config: nextConfig,
+    oauthConnected: Boolean(twitchSession.twitchAccessToken()),
+    assets: twitchVisualAssets,
+  });
 }

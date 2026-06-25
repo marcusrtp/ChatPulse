@@ -9,6 +9,7 @@ const {
   normalizeOptionLocks,
 } = await import("../src/core/option-access.js");
 const { createDemoChatSource } = await import("../src/chat/demo-source.js");
+const { createSimulationActions } = await import("../src/ui/simulation-actions.js");
 
 async function test(name, fn) {
   try {
@@ -491,12 +492,15 @@ await test("demo chat source emits Twitch and external visual samples", () => {
   const messages = source.emitPremiumTestMessages();
 
   assert.equal(messages.length, 4);
-  assert.deepEqual(messages.map((message) => message.badges), [
+  assert.deepEqual(messages.map((message) => message.badges.map((badge) => badge.setId ?? badge)), [
     ["moderator"],
     ["vip"],
     ["subscriber"],
     ["moderator", "vip", "subscriber"],
   ]);
+  assert.equal(messages[0].badges[0].imageUrl2x, "https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/2");
+  assert.equal(messages[1].badges[0].imageUrl2x, "https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/2");
+  assert.equal(messages[2].badges[0].title, "Badge abonne Twitch de la chaine");
   assert.deepEqual(messages.map((message) => message.source), ["premium-test", "premium-test", "premium-test", "premium-test"]);
   assert.equal(messages[0].color, "#22c55e");
   assert.equal(messages[0].fragments[1].type, "emote");
@@ -557,6 +561,71 @@ await test("chat renderer updates the accent color for future preview messages",
   } finally {
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;
+  }
+});
+
+await test("stress action enables free visual samples before injection", () => {
+  const previousSetTimeout = globalThis.setTimeout;
+  const scheduled = [];
+  const emitted = [];
+  const appliedConfigs = [];
+  const publishedConfigs = [];
+  const commands = [];
+
+  globalThis.setTimeout = (callback, delay) => {
+    scheduled.push({ callback, delay });
+    return scheduled.length;
+  };
+
+  try {
+    const elements = {
+      twitchVisuals: { checked: false },
+      externalEmotes: { checked: false },
+    };
+    const actions = createSimulationActions({
+      elements,
+      bus: {},
+      demoSource: {
+        emitTestMessage(author, text, options) {
+          emitted.push({ author, text, options });
+        },
+      },
+      getRenderer: () => ({
+        setOptions(config) {
+          appliedConfigs.push(config);
+        },
+      }),
+      diagnostics: { warn() {} },
+      readFormConfig: () => ({
+        twitchVisuals: elements.twitchVisuals.checked,
+        externalEmotes: elements.externalEmotes.checked,
+      }),
+      applyVisualConfig(config) {
+        appliedConfigs.push({ visual: config });
+      },
+      updateOverlayUrl() {},
+      renderDiagnostics() {},
+      renderMessageHistory() {},
+      publishLiveConfig(config) {
+        publishedConfigs.push(config);
+      },
+      sendLiveCommand(command) {
+        commands.push(command);
+      },
+    });
+
+    actions.runStressTest();
+
+    assert.equal(elements.twitchVisuals.checked, true);
+    assert.equal(elements.externalEmotes.checked, true);
+    assert.deepEqual(publishedConfigs, [{ twitchVisuals: true, externalEmotes: true }]);
+    assert.equal(appliedConfigs.length, 2);
+    assert.equal(emitted.length, 1);
+    assert.equal(emitted[0].options.fragments.some((fragment) => fragment.type === "emote"), true);
+    assert.equal(commands.includes("stress-test"), true);
+    assert.equal(scheduled[0].delay, 35);
+  } finally {
+    globalThis.setTimeout = previousSetTimeout;
   }
 });
 

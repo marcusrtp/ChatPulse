@@ -3,6 +3,88 @@
 Date : 2026-06-25
 Objectif : transformer ChatPulse en overlay OBS commercialisable, differencie par la fiabilite, le diagnostic et la lisibilite.
 
+## Ordre d'implementation recommande
+
+Cette section doit rester en haut : elle sert de plan d'action.
+
+### 1. Quick wins fiabilite
+
+Objectif : renforcer vite la promesse centrale sans backend et sans cout serveur.
+
+1. Export du diagnostic simple en JSON et texte lisible.
+2. Mode test OBS guide avec verdicts : OK, attention, deborde, trop petit, retard, sature.
+3. Mode lisibilite automatique.
+4. Filtres anti-bruit locaux : commandes, bots, spam identique, messages trop longs.
+5. Masquage partiel des mots bannis et insultes avec `***`.
+6. Profils personnalises sauvegardables.
+
+Pourquoi cet ordre : ces points exploitent deja les compteurs, l'historique, le stress test et les reglages existants. Ils donnent vite une valeur visible au streamer.
+
+### 2. Ergonomie OBS et personnalisation utile
+
+Objectif : aider le streamer a placer et regler l'overlay proprement avant d'ajouter des integrations plus lourdes.
+
+7. Previsualisation OBS avec zones sures.
+8. Systeme de themes simples : sombre premium, clair, neon, minimal, esport, cozy, transparent fort.
+9. Regles d'affichage intelligentes de base : modos/VIP visibles, mentions prioritaires, questions epinglees.
+
+Pourquoi cet ordre : la personnalisation avancee devient utile quand la base fiable est deja lisible et testable.
+
+### 3. Valeur pro Twitch
+
+Objectif : transformer ChatPulse en outil de diagnostic live, pas seulement en overlay demo.
+
+10. Rendre l'OAuth plus explicite dans l'interface : expliquer ce que la connexion apporte avant de demander au streamer de se connecter.
+11. Ajouter un statut clair des visuels Twitch : badges de chaine charges, emotes chargees, fallback utilise.
+12. Mettre en cache les badges et emotes par chaine pour eviter les rechargements inutiles.
+13. Diagnostic Twitch pro : recus, affiches, supprimes, moderation, trous, retard, statut des badges/emotes et fallback utilise.
+14. Verification des assets Twitch reels par chaine : badges abonne, badges fondateur, badges bits, emotes et couleurs.
+
+Pourquoi cet ordre : les badges et emotes sont importants, mais le vrai avantage concurrentiel vient d'abord du diagnostic fiable sur les messages et la moderation.
+
+### 4. Diagnostic premium
+
+Objectif : creer les fonctions qui justifient une offre payante.
+
+15. Verification OBS avancee : heartbeat, confirmation de commandes, alertes de non-reponse, checklist OBS.
+16. Rapport lisible apres incident avec donnees anonymisables.
+17. Replay d'incident : revoir les dernieres secondes d'un probleme.
+18. Historique d'incidents local, puis export partageable.
+
+Pourquoi cet ordre : ces fonctions sont plus difficiles, mais elles creent la difference business face aux overlays classiques.
+
+### 5. SaaS et monetisation
+
+Objectif : passer d'un outil local gratuit a un produit commercialisable sans sacrifier la securite.
+
+19. Backend OAuth securise avec tokens chiffres cote serveur.
+20. Comptes utilisateurs.
+21. Sauvegarde cloud des profils, themes et diagnostics.
+22. URL OBS persistante.
+23. Multi-overlays et support prioritaire.
+
+Pourquoi cet ordre : le cloud devient pertinent seulement quand les fonctions locales donnent deja envie de garder ChatPulse.
+
+### 6. Extensions long terme
+
+Objectif : elargir le marche quand Twitch est deja solide.
+
+24. Interface commune `chat source` pour preparer plusieurs plateformes.
+25. YouTube Live Chat.
+26. Kick.
+27. Diagnostic multi-plateformes quand les API le permettent.
+
+Pourquoi cet ordre : YouTube/Kick peuvent ouvrir le marche, mais les ajouter trop tot risque de ralentir le coeur du produit.
+
+## Socle deja valide
+
+- MVP local sans cout serveur : configuration, URL OBS, demo, stress test et diagnostic restent utilisables sans OAuth.
+- Securite OBS : l'URL OBS ne contient pas de token Twitch.
+- Moderation cote rendu : messages supprimes, bloques AutoMod, bannis, timeout ou clear chat ne restent pas affiches.
+- handshake OBS local : le panneau detecte si l'overlay OBS repond, si les reglages sont alignes et si les commandes de test sont confirmees.
+- Visuels Twitch gratuits : badges officiels, couleurs de pseudo, emotes Twitch et emotes externes 7TV/BTTV/FFZ sont prevus dans le socle gratuit.
+- Positionnement prioritaire : vendre de la fiabilite/debug OBS avant de vendre uniquement de la personnalisation visuelle.
+
 ## Positionnement
 
 ChatPulse ne doit pas devenir un clone de Streamlabs ou StreamElements. La valeur ajoutee principale doit rester :
@@ -18,13 +100,10 @@ ChatPulse ne doit pas devenir un clone de Streamlabs ou StreamElements. La valeu
 Ce socle doit rester vrai a chaque evolution majeure :
 
 - architecture maintenable separee entre `core`, `twitch`, `ui`, `styles` et `tests` ;
-- controle principal decoupe entre formulaire, session Twitch, handshake OBS et actions de simulation ;
 - URL OBS sans token Twitch ni secret sensible ;
 - OAuth utile pour le diagnostic pro, mais jamais obligatoire pour la demo et les reglages ;
-- handshake OBS local : presence de la source, config chargee et accuse de reception des commandes ;
+- handshake OBS local : presence de la source, configuration chargee et accuse de reception des commandes ;
 - moderation traitee par le rendu : suppression, AutoMod, ban, timeout, purge et retrait de messages ;
-- historique consultable pour comprendre les messages affiches, supprimes, bloques ou retires ;
-- visuels Twitch de base gratuits : badges moderateur/VIP/abonne, emotes et couleurs de pseudo activables sans offre payante ;
 - tests couvrant configuration, URL OBS, moderation, EventSub, historique, diagnostic, handshake OBS et smoke HTML/CSS ;
 - promesse produit centree sur la fiabilite/debug OBS avant la personnalisation visuelle.
 
@@ -146,6 +225,23 @@ Garder en gratuit, car c'est attendu par les streamers et cela rend l'overlay cr
 - emotes externes populaires : 7TV, BetterTTV et FrankerFaceZ ;
 - couleurs de pseudo.
 
+Etat actuel :
+
+- option d'interface `Badges et emotes Twitch officiels` deja presente dans `Options OBS` ;
+- option d'interface `Emotes externes 7TV, BTTV et FFZ` deja presente dans `Options OBS` ;
+- les badges Twitch officiels sont charges avec OAuth via badges globaux et badges de chaine ;
+- les badges abonnes dedies a chaque streamer sont recuperables quand la chaine est connectee ;
+- l'apercu local affiche de vrais badges CDN Twitch pour moderateur et VIP ;
+- le bouton de test et le stress test incluent badges, couleurs, emotes Twitch et emotes externes ;
+- 7TV, BetterTTV et FrankerFaceZ sont resolus cote live quand l'option externe est activee.
+
+Restes utiles :
+
+- afficher dans l'interface un statut clair `badges de chaine charges / fallback utilise` ;
+- mettre en cache les badges par chaine pour eviter les rechargements inutiles ;
+- exposer dans le diagnostic premium la version exacte utilisee, par exemple `subscriber/6` ;
+- ajouter une explication courte dans l'UI avant OAuth pour dire ce que la connexion apporte aux badges.
+
 Regle produit : ces elements ne doivent pas devenir le paywall principal. Le premium doit plutot porter sur le diagnostic avance, les exports, les profils sauvegardes, les themes avances, le replay d'incident et le cloud securise.
 
 ## Phase 4 - Fiabilite et diagnostic premium
@@ -211,6 +307,10 @@ Quand l'OAuth est active, ajouter un tableau de verification live avec :
 - detection des trous dans la suite des messages ;
 - alerte si l'overlay prend du retard ;
 - alerte si OBS n'affiche plus les nouveaux messages ;
+- verification des assets Twitch reels par chaine : badges abonne, badges fondateur, badges bits, emotes et couleurs ;
+- controle que l'overlay utilise bien la version envoyee par Twitch, par exemple `subscriber/6` ou `subscriber/12` ;
+- cache par chaine des badges officiels pour eviter de recharger Twitch inutilement pendant un live ;
+- alerte si les badges officiels d'une chaine n'ont pas pu etre recuperes et que l'overlay repasse en fallback texte ;
 - export d'incident partageable avec le support ou un moderateur.
 
 Objectif : prouver que ChatPulse ne fait pas seulement un bel overlay, mais aide le streamer a savoir si son chat est fiable en conditions reelles.
@@ -303,7 +403,7 @@ Objectif : passer d'un outil gratuit utile a un produit commercialisable.
 Pistes freemium :
 
 - gratuit : overlay de base, mode demo, diagnostic local, presets simples, badges/emotes/couleurs Twitch et emotes externes 7TV/BTTV/FFZ quand l'option est activee ;
-- payant : options verrouillables via registre premium, profils sauvegardes, themes premium, diagnostic exportable avance, diagnostic Twitch pro, multi-overlays, historique d'incidents, replay d'incident, support prioritaire ;
+- payant : options verrouillables via registre premium, profils sauvegardes, themes premium, diagnostic exportable avance, diagnostic Twitch pro, verification des vrais badges/emotes par chaine, cache assets Twitch par chaine, multi-overlays, historique d'incidents, replay d'incident, support prioritaire ;
 - plus tard : backend OAuth securise, compte streamer, sauvegarde cloud, URL OBS persistante.
 
 ## Phase 7 - Multi-plateformes future
@@ -325,79 +425,60 @@ Approche technique recommandee :
 
 Risque : le multi-plateformes peut ralentir le produit si Twitch n'est pas deja excellent. A traiter comme extension business, pas comme prerequis MVP.
 
-## Ordre d'implementation recommande
-
-### 1. Quick wins fiabilite
-
-Objectif : renforcer vite la promesse centrale sans backend et sans cout serveur.
-
-1. Export du diagnostic simple en JSON et texte lisible.
-2. Mode test OBS guide avec verdicts : OK, attention, deborde, trop petit, retard, sature.
-3. Mode lisibilite automatique.
-4. Filtres anti-bruit locaux : commandes, bots, spam identique, messages trop longs.
-5. Masquage partiel des mots bannis et insultes avec `***`.
-6. Profils personnalises sauvegardables.
-
-Pourquoi cet ordre : ces points exploitent deja les compteurs, l'historique, le stress test et les reglages existants. Ils donnent vite une valeur visible au streamer.
-
-### 2. Ergonomie OBS et personnalisation utile
-
-Objectif : aider le streamer a placer et regler l'overlay proprement avant d'ajouter des integrations plus lourdes.
-
-6. Previsualisation OBS avec zones sures.
-7. Systeme de themes simples : sombre premium, clair, neon, minimal, esport, cozy, transparent fort.
-8. Regles d'affichage intelligentes de base : modos/VIP visibles, mentions prioritaires, questions epinglees.
-
-Pourquoi cet ordre : la personnalisation avancee devient utile quand la base fiable est deja lisible et testable.
-
-### 3. Valeur pro Twitch
-
-Objectif : transformer ChatPulse en outil de diagnostic live, pas seulement en overlay demo.
-
-9. Connexion Twitch OAuth finalisee et expliquee clairement.
-10. Vrai chat Twitch en conditions live.
-11. Detection des suppressions reelles et evenements de moderation accessibles.
-12. Diagnostic Twitch pro : recus, affiches, supprimes, moderation, trous, retard.
-13. Fiabilisation des badges officiels, emotes Twitch, emotes externes 7TV/BTTV/FFZ et couleurs de pseudo dans le vrai live.
-
-Pourquoi cet ordre : les badges et emotes sont importants, mais le vrai avantage concurrentiel vient d'abord du diagnostic fiable sur les messages et la moderation.
-
-### 4. Diagnostic premium
-
-Objectif : creer les fonctions qui justifient une offre payante.
-
-14. Verification OBS avancee : heartbeat, confirmation de commandes, alertes de non-reponse, checklist OBS.
-15. Rapport lisible apres incident avec donnees anonymisables.
-16. Replay d'incident : revoir les dernieres secondes d'un probleme.
-17. Historique d'incidents local, puis export partageable.
-
-Pourquoi cet ordre : ces fonctions sont plus difficiles, mais elles creent la difference business face aux overlays classiques.
-
-### 5. SaaS et monetisation
-
-Objectif : passer d'un outil local gratuit a un produit commercialisable sans sacrifier la securite.
-
-18. Backend OAuth securise avec tokens chiffres cote serveur.
-19. Comptes utilisateurs.
-20. Sauvegarde cloud des profils, themes et diagnostics.
-21. URL OBS persistante.
-22. Multi-overlays et support prioritaire.
-
-Pourquoi cet ordre : le cloud devient pertinent seulement quand les fonctions locales donnent deja envie de garder ChatPulse.
-
-### 6. Extensions long terme
-
-Objectif : elargir le marche quand Twitch est deja solide.
-
-23. Interface commune `chat source` pour preparer plusieurs plateformes.
-24. YouTube Live Chat.
-25. Kick.
-26. Diagnostic multi-plateformes quand les API le permettent.
-
-Pourquoi cet ordre : YouTube/Kick peuvent ouvrir le marche, mais les ajouter trop tot risque de ralentir le coeur du produit.
-
 ## Priorite produit
 
 Priorite court terme : ne pas perdre la proposition de valeur centrale.
 
 ChatPulse doit d'abord etre le meilleur outil pour verifier que le chat OBS est lisible, stable et pret pour le live. Les themes premium viennent ensuite, mais ne doivent pas remplacer la promesse de fiabilite.
+
+## Ce qui est deja fait
+
+Cette section reste en bas : elle sert de bilan et de reference.
+
+## Socle deja valide
+
+Ce socle doit rester vrai a chaque evolution majeure :
+
+- architecture maintenable separee entre `core`, `twitch`, `ui`, `styles` et `tests` ;
+- controle principal decoupe entre formulaire, session Twitch, handshake OBS et actions de simulation ;
+- URL OBS sans token Twitch ni secret sensible ;
+- OAuth utile pour le diagnostic pro, mais jamais obligatoire pour la demo et les reglages ;
+- handshake OBS local : presence de la source, config chargee et accuse de reception des commandes ;
+- moderation traitee par le rendu : suppression, AutoMod, ban, timeout, purge et retrait de messages ;
+- historique consultable pour comprendre les messages affiches, supprimes, bloques ou retires ;
+- visuels Twitch de base gratuits : badges moderateur/VIP/abonne, emotes et couleurs de pseudo activables sans offre payante ;
+- vrais badges Twitch avec OAuth : badges globaux et badges dedies a la chaine charges depuis Twitch quand l'option officielle est activee ;
+- apercu local des badges : vrais badges CDN Twitch pour moderateur et VIP, fallback generique pour abonne sans chaine connectee ;
+- emotes externes gratuites : 7TV, BetterTTV et FrankerFaceZ chargees en live quand l'option externe est activee ;
+- registre premium en place pour verrouiller proprement une option plus tard sans exposer de donnee dans l'URL OBS ;
+- tests couvrant configuration, URL OBS, moderation, EventSub, historique, diagnostic, handshake OBS et smoke HTML/CSS ;
+- promesse produit centree sur la fiabilite/debug OBS avant la personnalisation visuelle.
+
+### Etat actuel du prototype
+
+Deja implemente :
+
+- page de controle en francais avec groupes de reglages ;
+- overlay OBS configurable par URL sans token ;
+- live config : les reglages changent sans rafraichir l'overlay ;
+- stress test, message de test, notification OBS, simulation suppression et AutoMod ;
+- historique des messages recus, y compris messages supprimes ou bloques accessibles en detail ;
+- compteur recus, visibles, en attente, affiches, supprimes et bloques ;
+- handshake OBS local avec heartbeat et accuse de reception des commandes ;
+- OAuth Twitch optionnel ;
+- vrai chat Twitch via EventSub ;
+- moderation Twitch : suppression de message, purge, ban, timeout et AutoMod quand l'evenement est accessible ;
+- badges officiels Twitch avec OAuth, dont badges de chaine comme les abonnes ;
+- emotes Twitch officielles ;
+- couleurs de pseudo Twitch ;
+- emotes externes 7TV, BetterTTV et FrankerFaceZ ;
+- exemples de test avec badges CDN Twitch moderateur/VIP, emotes Twitch et emotes externes ;
+- registre central pour rendre une option premium plus tard.
+
+Pas encore assez visible dans l'interface :
+
+- statut clair des badges officiels charges par chaine ;
+- indication `fallback utilise` quand Twitch ne renvoie pas un asset ;
+- explication avant OAuth de ce que la connexion debloque ;
+- export diagnostic complet ;
+- rapport apres incident.

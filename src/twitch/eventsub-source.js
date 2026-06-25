@@ -117,8 +117,10 @@ export function createTwitchEventSubSource(options = {}) {
       try {
         const status = await assets.loadForBroadcaster(state.broadcaster.id);
         badgeResolver = assets.resolveBadge;
+        emit("twitch:visuals", { kind: "badges", status: "loaded", ...status });
         diagnostics?.info?.("twitch", `Badges Twitch officiels chargés (${status.badges}).`);
       } catch (error) {
+        emit("twitch:visuals", { kind: "badges", status: "error", message: error.message || "chargement impossible" });
         diagnostics?.warn?.("twitch", `Badges Twitch officiels indisponibles : ${error.message || "chargement impossible"}.`);
       }
     }
@@ -129,11 +131,13 @@ export function createTwitchEventSubSource(options = {}) {
       try {
         const status = await assets.loadForTwitchUser(state.broadcaster.id);
         externalEmoteResolver = assets.resolveEmote;
+        emit("twitch:visuals", { kind: "external-emotes", status: "loaded", ...status });
         diagnostics?.info?.("twitch", `Emotes externes chargées : 7TV ${status.providers.seventv}, BTTV ${status.providers.bttv}, FFZ ${status.providers.ffz}.`);
         for (const error of status.errors) {
           diagnostics?.warn?.("twitch", `${error.provider} indisponible : ${error.message}.`);
         }
       } catch (error) {
+        emit("twitch:visuals", { kind: "external-emotes", status: "error", message: error.message || "chargement impossible" });
         diagnostics?.warn?.("twitch", `Emotes externes indisponibles : ${error.message || "chargement impossible"}.`);
       }
     }

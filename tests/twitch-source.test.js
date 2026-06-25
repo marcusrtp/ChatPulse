@@ -132,6 +132,12 @@ await test("EventSub source resolves Twitch users, subscribes after welcome, and
   });
 
   await source.start();
+  const visualEvents = emitted.filter((entry) => entry.eventName === "twitch:visuals");
+  assert.deepEqual(visualEvents.map((entry) => entry.payload.kind), ["badges", "external-emotes"]);
+  assert.equal(visualEvents[0].payload.status, "loaded");
+  assert.equal(visualEvents[0].payload.badges, 1);
+  assert.equal(visualEvents[1].payload.providers.seventv, 1);
+
   assert.equal(sockets.length, 1);
   assert.equal(sockets[0].url, "wss://eventsub.wss.twitch.tv/ws");
 
@@ -163,12 +169,12 @@ await test("EventSub source resolves Twitch users, subscribes after welcome, and
     }),
   });
 
-  assert.equal(emitted.length, 1);
-  assert.equal(emitted[0].eventName, "chat:message");
-  assert.equal(emitted[0].payload.id, "msg-live");
-  assert.equal(emitted[0].payload.text, "Live branché OMEGALUL");
-  assert.equal(emitted[0].payload.badges[0].imageUrl1x, "https://static-cdn.jtvnw.net/badges/mod-1.png");
-  assert.deepEqual(emitted[0].payload.fragments, [
+  const chatMessages = emitted.filter((entry) => entry.eventName === "chat:message");
+  assert.equal(chatMessages.length, 1);
+  assert.equal(chatMessages[0].payload.id, "msg-live");
+  assert.equal(chatMessages[0].payload.text, "Live branché OMEGALUL");
+  assert.equal(chatMessages[0].payload.badges[0].imageUrl1x, "https://static-cdn.jtvnw.net/badges/mod-1.png");
+  assert.deepEqual(chatMessages[0].payload.fragments, [
     { type: "text", text: "Live branché " },
     {
       type: "external-emote",

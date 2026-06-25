@@ -38,12 +38,34 @@ export function createSimulationActions({
   }
 
   function runStressTest() {
-    emitStressTestMessages(demoSource);
+    ensureStressVisualOptions();
+    emitStressTestMessages(demoSource, { intervalMs: 35 });
 
-    diagnostics.warn("demo", `${STRESS_TEST_TOTAL} messages injectés avec badges, emotes et couleurs pour tester la saturation.`);
+    diagnostics.warn("demo", `${STRESS_TEST_TOTAL} messages injectés progressivement avec badges, emotes et couleurs pour tester la saturation.`);
     sendLiveCommand("stress-test");
-    renderMessageHistory();
     renderDiagnostics();
+  }
+
+  function ensureStressVisualOptions() {
+    let changed = false;
+
+    if (elements.twitchVisuals && !elements.twitchVisuals.checked) {
+      elements.twitchVisuals.checked = true;
+      changed = true;
+    }
+
+    if (elements.externalEmotes && !elements.externalEmotes.checked) {
+      elements.externalEmotes.checked = true;
+      changed = true;
+    }
+
+    if (!changed) return;
+
+    const nextConfig = readFormConfig();
+    applyVisualConfig(nextConfig);
+    getRenderer().setOptions(nextConfig);
+    publishLiveConfig(nextConfig);
+    updateOverlayUrl();
   }
 
   function emitObsNotification() {

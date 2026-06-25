@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 const { createHistoryView, renderHistoryItem } = await import("../src/ui/history-view.js");
 const { createDiagnosticsView } = await import("../src/ui/diagnostics-view.js");
 const { createPremiumLockController } = await import("../src/ui/premium-locks.js");
+const { createTwitchVisualStatusView } = await import("../src/ui/twitch-visual-status-view.js");
 
 async function test(name, fn) {
   try {
@@ -155,6 +156,58 @@ await test("history view renders the most recent messages first", () => {
   assert.equal(listElement.children[1].children[0].textContent, "Recent");
 });
 
+await test("history view renders visible message fragments with emotes", () => {
+  const { documentRef } = createDomHarness();
+  const item = renderHistoryItem({
+    author: "Viewer",
+    text: "Salut Kappa wideVIBE",
+    source: "demo",
+    fragments: [
+      { type: "text", text: "Salut " },
+      { type: "emote", text: "Kappa", emoteId: "25" },
+      { type: "text", text: " " },
+      {
+        type: "external-emote",
+        text: "wideVIBE",
+        provider: "7TV",
+        imageUrl: "https://cdn.7tv.app/emote/01G1GXCR380004YN3NKDRR9QHD/2x.webp",
+      },
+    ],
+  }, { documentRef });
+
+  const text = item.children[2];
+
+  assert.equal(text.children[0].textContent, "Salut ");
+  assert.equal(text.children[1].className, "chat-emote");
+  assert.match(text.children[1].src, /static-cdn\.jtvnw\.net\/emoticons\/v2\/25\/default\/dark\/1\.0/);
+  assert.equal(text.children[3].className, "chat-emote chat-emote-external chat-emote-7tv");
+  assert.equal(text.children[3].src, "https://cdn.7tv.app/emote/01G1GXCR380004YN3NKDRR9QHD/2x.webp");
+});
+
+await test("history view renders visible Twitch badges next to the author", () => {
+  const { documentRef } = createDomHarness();
+  const item = renderHistoryItem({
+    author: "ModViewer",
+    text: "Message badge",
+    source: "demo",
+    badges: [
+      { setId: "moderator", title: "Moderator", imageUrl1x: "https://static-cdn.jtvnw.net/badges/mod-1.png" },
+      "vip",
+      "subscriber",
+    ],
+  }, { documentRef });
+
+  const author = item.children[0];
+  const badgeList = author.children[0];
+
+  assert.equal(author.className, "history-author");
+  assert.equal(badgeList.className, "chat-badges history-badges");
+  assert.equal(badgeList.children[0].className, "chat-badge-image");
+  assert.equal(badgeList.children[0].src, "https://static-cdn.jtvnw.net/badges/mod-1.png");
+  assert.deepEqual(badgeList.children.slice(1).map((badge) => badge.textContent), ["VIP", "SUB"]);
+  assert.equal(author.children[1].textContent, "ModViewer");
+});
+
 await test("diagnostics view renders status and event nodes", () => {
   const { documentRef } = createDomHarness();
   const statusTitle = createElement("h2");
@@ -173,6 +226,37 @@ await test("diagnostics view renders status and event nodes", () => {
   assert.equal(statusGrid.children[0].children[1].textContent, "Attention");
   assert.equal(eventLog.children[0].className, "event-info");
   assert.equal(eventLog.children[0].children[1].textContent, "OBS");
+});
+
+await test("Twitch visual status view explains OAuth options and loaded assets", () => {
+  const { documentRef } = createDomHarness();
+  const listElement = createElement("div");
+  const view = createTwitchVisualStatusView({ listElement, documentRef });
+
+  view.render({
+    config: { twitchVisuals: true, externalEmotes: true },
+    oauthConnected: false,
+  });
+
+  assert.equal(listElement.children[0].children[0].textContent, "OAuth Twitch");
+  assert.equal(listElement.children[0].children[1].textContent, "Non connecté");
+  assert.equal(listElement.children[1].children[1].textContent, "Aperçu local");
+  assert.equal(listElement.children[2].children[1].textContent, "Fallback abonné");
+  assert.equal(listElement.children[3].children[1].textContent, "Mode test");
+
+  view.render({
+    config: { twitchVisuals: true, externalEmotes: true },
+    oauthConnected: true,
+    assets: {
+      badges: { status: "loaded", badges: 12, badgeSets: 4 },
+      externalEmotes: { status: "loaded", providers: { seventv: 2, bttv: 3, ffz: 1 } },
+    },
+  });
+
+  assert.equal(listElement.children[0].children[1].textContent, "Connecté");
+  assert.equal(listElement.children[1].children[1].textContent, "12 badges chargés");
+  assert.equal(listElement.children[2].children[1].textContent, "4 familles chargées");
+  assert.equal(listElement.children[3].children[1].textContent, "7TV 2 · BTTV 3 · FFZ 1");
 });
 
 await test("premium lock controller disables locked option controls and marks them premium", () => {

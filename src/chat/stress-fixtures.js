@@ -1,8 +1,10 @@
+import { twitchPreviewBadges } from "../twitch/preview-badges.js";
+
 export const STRESS_TEST_TOTAL = 120;
 
 const VISUAL_PATTERNS = Object.freeze([
   Object.freeze({
-    badges: Object.freeze(["moderator"]),
+    badges: Object.freeze(twitchPreviewBadges(["moderator"])),
     color: "#22c55e",
     fragments: Object.freeze([
       Object.freeze({ type: "text", text: "MOD vérifie la lisibilité " }),
@@ -11,7 +13,7 @@ const VISUAL_PATTERNS = Object.freeze([
     ]),
   }),
   Object.freeze({
-    badges: Object.freeze(["vip"]),
+    badges: Object.freeze(twitchPreviewBadges(["vip"])),
     color: "#ec4899",
     fragments: Object.freeze([
       Object.freeze({ type: "text", text: "VIP garde le chat visible " }),
@@ -20,7 +22,7 @@ const VISUAL_PATTERNS = Object.freeze([
     ]),
   }),
   Object.freeze({
-    badges: Object.freeze(["subscriber"]),
+    badges: Object.freeze(twitchPreviewBadges(["subscriber"])),
     color: "#8b5cf6",
     fragments: Object.freeze([
       Object.freeze({ type: "text", text: "SUB teste les emotes " }),
@@ -29,7 +31,7 @@ const VISUAL_PATTERNS = Object.freeze([
     ]),
   }),
   Object.freeze({
-    badges: Object.freeze(["moderator", "vip", "subscriber"]),
+    badges: Object.freeze(twitchPreviewBadges(["moderator", "vip", "subscriber"])),
     color: "#06b6d4",
     fragments: Object.freeze([
       Object.freeze({ type: "text", text: "Combo badges + emotes " }),
@@ -85,14 +87,73 @@ export function createStressTestMessage(index) {
   };
 }
 
-export function emitStressTestMessages(demoSource, totalMessages = STRESS_TEST_TOTAL) {
-  for (let index = 0; index < totalMessages; index += 1) {
-    const message = createStressTestMessage(index);
-    demoSource.emitTestMessage(message.author, message.text, {
-      source: message.source,
-      badges: message.badges,
-      color: message.color,
-      fragments: message.fragments,
-    });
+export function emitStressTestMessages(demoSource, totalMessagesOrOptions = STRESS_TEST_TOTAL) {
+  const options = normalizeStressOptions(totalMessagesOrOptions);
+  const { totalMessages, intervalMs, scheduler, onComplete } = options;
+
+  if (intervalMs > 0 && typeof scheduler === "function") {
+    let index = 0;
+    let cancelled = false;
+
+    function emitNext() {
+      if (cancelled) return;
+      emitStressTestMessage(demoSource, index);
+      index += 1;
+
+      if (index < totalMessages) {
+        scheduler(emitNext, intervalMs);
+        return;
+      }
+
+      onComplete?.();
+    }
+
+    if (totalMessages > 0) emitNext();
+    else onComplete?.();
+
+    return {
+      cancel() {
+        cancelled = true;
+      },
+    };
   }
+
+  for (let index = 0; index < totalMessages; index += 1) {
+    emitStressTestMessage(demoSource, index);
+  }
+
+  onComplete?.();
+  return { cancel() {} };
+}
+
+function normalizeStressOptions(totalMessagesOrOptions) {
+  if (typeof totalMessagesOrOptions === "number") {
+    return {
+      totalMessages: Math.max(0, Math.floor(totalMessagesOrOptions)),
+      intervalMs: 0,
+      scheduler: globalThis.setTimeout?.bind(globalThis),
+      onComplete: undefined,
+    };
+  }
+
+  const options = totalMessagesOrOptions && typeof totalMessagesOrOptions === "object"
+    ? totalMessagesOrOptions
+    : {};
+
+  return {
+    totalMessages: Math.max(0, Math.floor(Number(options.totalMessages ?? STRESS_TEST_TOTAL))),
+    intervalMs: Math.max(0, Math.floor(Number(options.intervalMs ?? 0))),
+    scheduler: options.scheduler ?? globalThis.setTimeout?.bind(globalThis),
+    onComplete: typeof options.onComplete === "function" ? options.onComplete : undefined,
+  };
+}
+
+function emitStressTestMessage(demoSource, index) {
+  const message = createStressTestMessage(index);
+  demoSource.emitTestMessage(message.author, message.text, {
+    source: message.source,
+    badges: message.badges,
+    color: message.color,
+    fragments: message.fragments,
+  });
 }

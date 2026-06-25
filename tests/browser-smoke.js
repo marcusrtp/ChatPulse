@@ -48,6 +48,7 @@ try {
   const optionAccess = await fetch(`${baseUrl}/src/core/option-access.js`).then((response) => response.text());
   const obsConnectionMonitor = await fetch(`${baseUrl}/src/ui/obs-connection-monitor.js`).then((response) => response.text());
   const premiumLocks = await fetch(`${baseUrl}/src/ui/premium-locks.js`).then((response) => response.text());
+  const twitchVisualStatus = await fetch(`${baseUrl}/src/ui/twitch-visual-status-view.js`).then((response) => response.text());
   const settingsPresets = await fetch(`${baseUrl}/src/ui/settings-presets.js`).then((response) => response.text());
   const externalEmotes = await fetch(`${baseUrl}/src/chat/external-emotes.js`).then((response) => response.text());
   const stressFixtures = await fetch(`${baseUrl}/src/chat/stress-fixtures.js`).then((response) => response.text());
@@ -94,6 +95,8 @@ try {
   assert.match(control, /option gratuite/);
   assert.match(control, /id="external-emotes-input"/);
   assert.match(control, /Emotes externes 7TV, BTTV et FFZ/);
+  assert.match(control, /Visuels Twitch/);
+  assert.match(control, /id="visual-status-list"/);
   assert.match(control, /Nombre messages visible/);
   assert.match(control, /id="max-messages-input"[^>]+min="1"/);
   assert.match(control, /id="max-messages-input"[^>]+max="24"/);
@@ -144,6 +147,8 @@ try {
   assert.match(controlApp, /normalizeOptionLocks/);
   assert.match(controlApp, /createPremiumLockController/);
   assert.match(controlApp, /premiumLockController\.apply\(\)/);
+  assert.match(controlApp, /createTwitchVisualStatusView/);
+  assert.match(controlApp, /twitch:visuals/);
   assert.match(controlApp, /createObsConnectionMonitor/);
   assert.match(controlApp, /applySettingsPreset/);
   assert.match(controlApp, /getSettingsPreset/);
@@ -226,6 +231,9 @@ try {
   assert.match(premiumLocks, /premium-locked/);
   assert.match(premiumLocks, /premium-lock-badge/);
   assert.match(premiumLocks, /aria-disabled/);
+  assert.match(twitchVisualStatus, /createTwitchVisualStatusView/);
+  assert.match(twitchVisualStatus, /OAuth Twitch/);
+  assert.match(twitchVisualStatus, /Badges officiels/);
   assert.match(settingsPresets, /SETTING_PRESETS/);
   assert.match(settingsPresets, /applySettingsPreset/);
   assert.match(settingsPresets, /Just Chatting/);
