@@ -1,20 +1,22 @@
 import { createEventBus } from "../core/event-bus.js";
 import { createDiagnostics } from "../core/diagnostics.js";
 import { createOverlayUrl, loadConfig } from "../core/config.js";
+import { publishLiveConfigHttp } from "../core/live-http-sync.js";
 import { readLiveConfig, writeLiveConfig } from "../core/live-config.js";
 import { PREMIUM_OPTION_LOCKS, enforceOptionLocks, normalizeOptionLocks } from "../core/option-access.js";
+import { createViewerHistoryStore } from "../core/viewer-history.js";
 import { createDemoChatSource } from "../chat/demo-source.js";
 import { createTwitchSessionController } from "../twitch/session-controller.js";
 import { createChatRenderer } from "./chat-renderer.js";
 import { createControlForm } from "./control-form.js";
 import { createDiagnosticsView } from "./diagnostics-view.js";
 import { formatOverlayUrl } from "./overlay-url-display.js";
-import { createHistoryView } from "./history-view.js";
+import { createHistoryView, isModeratedHistoryMessage } from "./history-view.js";
 import { createObsConnectionMonitor } from "./obs-connection-monitor.js";
 import { previewHeightForCapacity } from "./preview-capacity.js";
 import { createPremiumLockController } from "./premium-locks.js";
 import { applySettingsPreset, getSettingsPreset } from "./settings-presets.js";
-import { createSimulationActions } from "./simulation-actions.js";
+import { LIVE_ACTION_START_DELAY_MS, createSimulationActions } from "./simulation-actions.js";
 import { createTwitchVisualStatusView } from "./twitch-visual-status-view.js";
 
 const bus = createEventBus();
@@ -79,6 +81,7 @@ const elements = {
   deletedCount: document.querySelector("#deleted-count"),
   blockedCount: document.querySelector("#blocked-count"),
   messageHistory: document.querySelector("#message-history"),
+  historyModeratedFilter: document.querySelector("#history-moderated-filter"),
   testButton: document.querySelector("#test-message-button"),
   obsNotificationButton: document.querySelector("#obs-notification-button"),
   stressButton: document.querySelector("#stress-test-button"),
@@ -89,6 +92,8 @@ const elements = {
 };
 
 const historyView = createHistoryView({ listElement: elements.messageHistory });
+const viewerHistoryStore = createViewerHistoryStore();
+let showModeratedHistoryOnly = false;
 const diagnosticsView = createDiagnosticsView({
   statusTitle: elements.statusTitle,
   statusGrid: elements.statusGrid,
@@ -144,6 +149,7 @@ renderDiagnostics();
 renderTwitchVisualStatus();
 simulationActions.updateAutomodButtonLabel();
 updateOverlayUrl();
+publishLiveConfig(config);
 obsMonitor.start();
 
 bus.on("chat:message", (message) => {
@@ -152,6 +158,7 @@ bus.on("chat:message", (message) => {
     return;
   }
 
+  recordViewerMessage(message);
   renderer.renderMessage(message);
   diagnostics.info("demo", `Message démo reçu depuis ${message.author}`);
   diagnostics.info("obs", "URL OBS prête. Colle-la dans une source navigateur.");
@@ -159,6 +166,7 @@ bus.on("chat:message", (message) => {
 });
 
 bus.on("chat:moderation", (event) => {
+  viewerHistoryStore.recordModeration(event);
   renderer.applyModeration(event);
   diagnostics.warn("twitch", simulationActions.moderationLogMessage(event));
   refreshLivePanels();
@@ -200,12 +208,17 @@ function commitFormConfig() {
 }
 
 elements.testButton.addEventListener("click", () => {
-  const messages = demoSource.emitPremiumTestMessages();
-  diagnostics.info("demo", "Pack de test visuel Twitch envoyé : badges, emotes et couleurs de pseudo.");
+  const messages = demoSource.getPremiumTestMessages();
+  const startAt = Date.now() + LIVE_ACTION_START_DELAY_MS;
   sendLiveCommand("test-message", {
     messages: messages.map(serializeLiveTestMessage),
+    startAt,
   });
-  refreshLivePanels();
+  scheduleLocalPreview(startAt, () => {
+    demoSource.emitPremiumTestMessages(messages);
+    diagnostics.info("demo", "Pack de test visuel Twitch envoyé : badges, emotes et couleurs de pseudo.");
+    refreshLivePanels();
+  });
 });
 
 function applyPreset(id) {
@@ -233,6 +246,11 @@ elements.obsNotificationButton.addEventListener("click", () => {
 
 elements.copyUrlButton.addEventListener("click", () => {
   copyOverlayUrl();
+});
+
+elements.historyModeratedFilter.addEventListener("click", () => {
+  showModeratedHistoryOnly = !showModeratedHistoryOnly;
+  renderMessageHistory();
 });
 
 elements.connectTwitchButton.addEventListener("click", () => {
@@ -314,14 +332,20 @@ function updateOverlayUrl() {
 }
 
 function publishLiveConfig(nextConfig = readFormConfig()) {
-  writeLiveConfig(globalThis.localStorage, {
+  const liveConfig = writeLiveConfig(globalThis.localStorage, {
     automodSimulation: simulationActions.isAutomodEnabled(),
     overlayConfig: nextConfig,
   });
+  publishLiveConfigHttp(liveConfig);
 }
 
 function sendLiveCommand(type, payload = {}) {
   return obsMonitor.sendLiveCommand(type, payload);
+}
+
+function scheduleLocalPreview(startAt, callback) {
+  const delay = Math.max(0, Math.floor(Number(startAt) - Date.now()));
+  window.setTimeout(callback, delay);
 }
 
 function serializeLiveTestMessage(message) {
@@ -378,7 +402,21 @@ function updateQueueStats(stats = renderer.getStats()) {
 }
 
 function renderMessageHistory() {
-  historyView.render(renderer.getHistory());
+  const history = renderer.getHistory();
+  const moderatedCount = history.filter(isModeratedHistoryMessage).length;
+
+  elements.historyModeratedFilter.textContent = showModeratedHistoryOnly
+    ? `Tous les messages (${history.length})`
+    : `Messages modérés (${moderatedCount})`;
+  elements.historyModeratedFilter.setAttribute("aria-pressed", String(showModeratedHistoryOnly));
+  elements.historyModeratedFilter.classList.toggle("is-active", showModeratedHistoryOnly);
+
+  historyView.render(history, { moderatedOnly: showModeratedHistoryOnly });
+}
+
+function recordViewerMessage(message) {
+  if (message.source === "notification") return;
+  viewerHistoryStore.recordMessage(message);
 }
 
 function refreshLivePanels() {

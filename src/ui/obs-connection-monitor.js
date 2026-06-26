@@ -1,4 +1,5 @@
 import { writeLiveCommand } from "../core/live-command.js";
+import { publishLiveCommandHttp, readLiveStateHttp } from "../core/live-http-sync.js";
 import {
   COMMAND_ACK_STORAGE_KEY,
   OVERLAY_HEARTBEAT_STORAGE_KEY,
@@ -30,15 +31,17 @@ export function createObsConnectionMonitor({
 
   function sendLiveCommand(type, payload = {}) {
     const command = writeLiveCommand(storage, { type, payload });
+    publishLiveCommandHttp(command);
     pendingLiveCommandId = command.id;
     markObsConnection("warning", "Commande envoyée à OBS. En attente de confirmation.");
     renderDiagnostics();
     return command;
   }
 
-  function updateObsConnectionStatus() {
-    const heartbeat = readOverlayHeartbeat(storage);
-    const ack = readCommandAck(storage);
+  async function updateObsConnectionStatus() {
+    const remoteState = await readLiveStateHttp();
+    const heartbeat = newestLiveStatus(readOverlayHeartbeat(storage), remoteState?.overlayHeartbeat);
+    const ack = newestLiveStatus(readCommandAck(storage), remoteState?.commandAck);
     const isConnected = isOverlayHeartbeatFresh(heartbeat);
     const expectedConfigHash = createOverlayConfigHash(getExpectedConfig());
     const hasDifferentConfig = isConnected && heartbeat.configHash && heartbeat.configHash !== expectedConfigHash;
@@ -77,6 +80,12 @@ export function createObsConnectionMonitor({
     } else {
       diagnostics.warn("obs", message);
     }
+  }
+
+  function newestLiveStatus(localStatus = {}, remoteStatus = {}) {
+    return Number(remoteStatus?.updatedAt ?? 0) > Number(localStatus?.updatedAt ?? 0)
+      ? remoteStatus
+      : localStatus;
   }
 
   return { start, sendLiveCommand, updateObsConnectionStatus };

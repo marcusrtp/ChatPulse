@@ -1,5 +1,6 @@
 import { normalizeConfig } from "../core/config.js";
 import { createEventBus } from "../core/event-bus.js";
+import { createLiveStatePoller, publishCommandAckHttp, publishOverlayHeartbeatHttp } from "../core/live-http-sync.js";
 import { LIVE_CONFIG_STORAGE_KEY, readLiveConfig } from "../core/live-config.js";
 import { LIVE_COMMAND_STORAGE_KEY, readLiveCommand } from "../core/live-command.js";
 import { createOverlayConfigHash, writeCommandAck, writeOverlayHeartbeat } from "../core/live-status.js";
@@ -34,9 +35,12 @@ if (liveConfig.updatedAt > 0) {
   config.automodSimulation = liveConfig.automodSimulation;
 }
 const stressMode = params.get("stress") === "1";
+const LIVE_STRESS_INTERVAL_MS = 35;
 const overlayId = createOverlayId();
 let automodReviewedCount = 0;
 let nextAutomodBlockAt = 3;
+let lastAppliedLiveConfigUpdatedAt = liveConfig.updatedAt;
+let lastAppliedCommandId = "";
 
 const bus = createEventBus();
 const feed = document.querySelector("#overlay-feed");
@@ -51,6 +55,12 @@ const demoSource = createDemoChatSource({ emit: bus.emit });
 applyVisualConfig(config);
 sendOverlayHeartbeat();
 window.setInterval(sendOverlayHeartbeat, 2000);
+createLiveStatePoller({
+  ignoreCommandsBefore: Date.now(),
+  lastConfigUpdatedAt: lastAppliedLiveConfigUpdatedAt,
+  onLiveConfig: applyLiveConfig,
+  onLiveCommand: applyLiveCommand,
+}).start();
 window.addEventListener("storage", (event) => {
   if (event.key === LIVE_CONFIG_STORAGE_KEY) {
     applyLiveConfig(readLiveConfig());
@@ -95,13 +105,14 @@ function updateDebugStats(stats = renderer.getStats(), prefix = "Flux démo acti
 }
 
 function sendOverlayHeartbeat(stats = renderer.getStats()) {
-  writeOverlayHeartbeat(globalThis.localStorage, {
+  const heartbeat = writeOverlayHeartbeat(globalThis.localStorage, {
     overlayId,
     configHash: createOverlayConfigHash(config),
     visible: stats.visible,
     pending: stats.pending,
     received: stats.received,
   });
+  publishOverlayHeartbeatHttp(heartbeat);
 }
 
 demoSource.emitTestMessage("StreamCheck", "Overlay chargé dans OBS.");
@@ -134,6 +145,10 @@ function applyVisualConfig(config) {
 }
 
 function applyLiveConfig(nextLiveConfig) {
+  const nextUpdatedAt = Number(nextLiveConfig?.updatedAt ?? 0);
+  if (nextUpdatedAt > 0 && nextUpdatedAt <= lastAppliedLiveConfigUpdatedAt) return;
+  if (nextUpdatedAt > 0) lastAppliedLiveConfigUpdatedAt = nextUpdatedAt;
+
   const previousAutomod = config.automodSimulation;
   Object.assign(config, normalizeConfig({
     ...config,
@@ -169,27 +184,11 @@ function applyLiveConfig(nextLiveConfig) {
 
 function applyLiveCommand(command) {
   if (!command.type) return;
+  if (command.id && command.id === lastAppliedCommandId) return;
+  if (command.id) lastAppliedCommandId = command.id;
 
   if (command.type === "test-message") {
-    if (Array.isArray(command.payload.messages) && command.payload.messages.length > 0) {
-      for (const message of command.payload.messages) {
-        demoSource.emitTestMessage(
-          message.author || "StreamCheck",
-          message.text || "Message de test envoyé depuis le panneau.",
-          {
-            source: message.source || "premium-test",
-            badges: message.badges,
-            color: message.color,
-            fragments: message.fragments,
-          },
-        );
-      }
-    } else {
-      demoSource.emitTestMessage(
-        command.payload.author || "StreamCheck",
-        command.payload.text || "Message de test envoyé depuis le panneau.",
-      );
-    }
+    runAtPayloadStart(command.payload, () => emitLiveTestMessages(command.payload));
   } else if (command.type === "obs-notification") {
     bus.emit("chat:message", {
       id: `notification-${command.id || Date.now()}`,
@@ -200,7 +199,7 @@ function applyLiveCommand(command) {
       badges: ["obs"],
     });
   } else if (command.type === "stress-test") {
-    runStressTest();
+    runStressTest(command.payload);
   } else if (command.type === "delete-message") {
     simulateDeletedMessage();
   } else if (command.type === "warning" && config.debug) {
@@ -212,18 +211,58 @@ function applyLiveCommand(command) {
   ackLiveCommand(command);
 }
 
+function runAtPayloadStart(payload, callback) {
+  const startAt = Number(payload?.startAt);
+  const delay = Number.isFinite(startAt) ? Math.max(0, Math.floor(startAt - Date.now())) : 0;
+
+  if (delay > 0) {
+    window.setTimeout(callback, delay);
+    return;
+  }
+
+  callback();
+}
+
+function emitLiveTestMessages(payload = {}) {
+  if (Array.isArray(payload.messages) && payload.messages.length > 0) {
+    for (const message of payload.messages) {
+      demoSource.emitTestMessage(
+        message.author || "StreamCheck",
+        message.text || "Message de test envoyé depuis le panneau.",
+        {
+          source: message.source || "premium-test",
+          badges: message.badges,
+          color: message.color,
+          fragments: message.fragments,
+        },
+      );
+    }
+    return;
+  }
+
+  demoSource.emitTestMessage(
+    payload.author || "StreamCheck",
+    payload.text || "Message de test envoyé depuis le panneau.",
+  );
+}
+
 function ackLiveCommand(command, status = "ok", message = "Commande reçue par OBS") {
-  writeCommandAck(globalThis.localStorage, {
+  const ack = writeCommandAck(globalThis.localStorage, {
     commandId: command.id,
     type: command.type,
     overlayId,
     status,
     message,
   });
+  publishCommandAckHttp(ack);
 }
 
-function runStressTest() {
-  emitStressTestMessages(demoSource);
+function runStressTest(options = {}) {
+  emitStressTestMessages(demoSource, {
+    totalMessages: options.totalMessages,
+    intervalMs: options.intervalMs ?? LIVE_STRESS_INTERVAL_MS,
+    startAt: options.startAt,
+  });
 }
 
 function simulateDeletedMessage() {

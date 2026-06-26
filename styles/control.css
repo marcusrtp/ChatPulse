@@ -61,6 +61,35 @@
 .panel-heading { margin-bottom: 12px; }
 .panel-heading.compact { margin-bottom: 10px; }
 
+.history-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-filter-button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  border-radius: 8px;
+  background: rgba(20, 184, 166, 0.12);
+  color: var(--text);
+  padding: 7px 10px;
+  font-weight: 800;
+  font-size: 0.78rem;
+  line-height: 1.15;
+  cursor: pointer;
+}
+
+.history-filter-button:hover,
+.history-filter-button:focus-visible,
+.history-filter-button.is-active {
+  border-color: rgba(45, 212, 191, 0.9);
+  background: rgba(20, 184, 166, 0.24);
+  outline: none;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: var(--ok);

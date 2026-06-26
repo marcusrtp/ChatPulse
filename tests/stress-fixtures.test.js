@@ -32,7 +32,14 @@ await test("stress fixtures keep a saturated chat and Twitch visual samples", ()
   assert.ok(messages.some((message) => message.fragments.some((fragment) => fragment.type === "external-emote" && fragment.provider === "7TV")));
   assert.ok(messages.some((message) => message.fragments.some((fragment) => fragment.type === "external-emote" && fragment.provider === "BTTV")));
   assert.ok(messages.some((message) => message.fragments.some((fragment) => fragment.type === "external-emote" && fragment.provider === "FFZ")));
-  assert.ok(messages.every((message) => message.author.startsWith("PseudoTresLong_")));
+  assert.ok(messages.some((message) => message.author === "NovaCaster"));
+  assert.ok(messages.some((message) => message.author === "PixelMod"));
+  assert.ok(messages.some((message) => message.author.startsWith("PseudoTresLong_")));
+  assert.equal(messages.every((message) => message.displayName === message.author), true);
+  assert.equal(messages.every((message) => message.login && message.viewerKey === `login:${message.login}`), true);
+  assert.equal(messages.every((message) => message.author.startsWith("PseudoTresLong_")), false);
+  assert.ok(messages.some((message) => /son|clip|chat|overlay|OBS/i.test(message.text)));
+  assert.ok(messages.some((message) => message.text.length > 130));
 });
 
 await test("stress test can be paced so history and preview update message by message", () => {
@@ -61,6 +68,41 @@ await test("stress test can be paced so history and preview update message by me
 
   scheduled.shift().callback();
   assert.equal(emitted.length, 3);
+  assert.equal(scheduled.length, 0);
+});
+
+await test("stress test can delay first message until a shared OBS start time", () => {
+  const emitted = [];
+  const scheduled = [];
+  const demoSource = {
+    emitTestMessage(author, text, options) {
+      emitted.push({ author, text, options });
+    },
+  };
+
+  emitStressTestMessages(demoSource, {
+    totalMessages: 2,
+    intervalMs: 25,
+    startAt: 1050,
+    now: () => 1000,
+    scheduler(callback, delay) {
+      scheduled.push({ callback, delay });
+    },
+  });
+
+  assert.equal(emitted.length, 0);
+  assert.equal(scheduled.length, 1);
+  assert.equal(scheduled[0].delay, 50);
+
+  scheduled.shift().callback();
+  assert.equal(emitted.length, 1);
+  assert.equal(emitted[0].options.login, "novacaster");
+  assert.equal(emitted[0].options.viewerKey, "login:novacaster");
+  assert.equal(scheduled.length, 1);
+  assert.equal(scheduled[0].delay, 25);
+
+  scheduled.shift().callback();
+  assert.equal(emitted.length, 2);
   assert.equal(scheduled.length, 0);
 });
 

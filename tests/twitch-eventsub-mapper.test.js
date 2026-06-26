@@ -77,6 +77,8 @@ await test("maps channel.chat.message into an internal chat message with Twitch 
   assert.equal(mapped.payload.userId, "user-1");
   assert.equal(mapped.payload.author, "Viewer One");
   assert.equal(mapped.payload.login, "viewerone");
+  assert.equal(mapped.payload.displayName, "Viewer One");
+  assert.equal(mapped.payload.viewerKey, "id:user-1");
   assert.equal(mapped.payload.text, "Salut Kappa");
   assert.deepEqual(mapped.payload.fragments, [
     { type: "text", text: "Salut " },
@@ -159,6 +161,8 @@ await test("maps message deletion to a moderation event by message id", () => {
       userId: "user-2",
       author: "Deleted User",
       login: "deleted_user",
+      displayName: "Deleted User",
+      viewerKey: "id:user-2",
       source: "twitch",
       channel: "pantoufl",
     },
@@ -189,7 +193,9 @@ await test("maps user purge, clear chat, Automod hold, ban and timeout", () => {
     },
   });
   assert.equal(automod.payload.type, "automod_held");
+  assert.equal(automod.payload.viewerKey, "id:user-4");
   assert.equal(automod.payload.message.id, "held-1");
+  assert.equal(automod.payload.message.viewerKey, "id:user-4");
   assert.equal(automod.payload.message.text, "Message à vérifier");
   assert.equal(automod.payload.message.moderationReason, "AutoMod Twitch");
 

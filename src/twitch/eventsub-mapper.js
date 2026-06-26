@@ -1,3 +1,5 @@
+import { normalizeViewerIdentity, viewerHistoryKey } from "../core/viewer-identity.js";
+
 const EVENTSUB_SCOPES = Object.freeze([
   "user:read:chat",
   "user:bot",
@@ -52,7 +54,7 @@ export function createTwitchEventSubMapper(options = {}) {
   }
 
   function mapChatMessage(event) {
-    return withBase({
+    return withViewer(withBase({
       id: stringOrFallback(event.message_id, `twitch-${Date.now()}`),
       userId: stringOrFallback(event.chatter_user_id, event.user_id),
       author: stringOrFallback(event.chatter_user_name, event.chatter_user_login, "Viewer"),
@@ -63,32 +65,32 @@ export function createTwitchEventSubMapper(options = {}) {
       color: event.color,
       timestamp: Date.now(),
       source: "twitch",
-    });
+    }));
   }
 
   function mapDeletedMessage(event) {
-    return withBase({
+    return withViewer(withBase({
       type: "message_deleted",
       messageId: stringOrFallback(event.message_id),
       userId: stringOrFallback(event.target_user_id, event.user_id),
       author: stringOrFallback(event.target_user_name, event.target_user_login),
       login: normalizeTwitchLogin(event.target_user_login ?? event.target_user_name),
       source: "twitch",
-    });
+    }));
   }
 
   function mapUserModeration(event, type) {
-    return withBase({
+    return withViewer(withBase({
       type,
       userId: stringOrFallback(event.target_user_id, event.user_id),
       author: stringOrFallback(event.target_user_name, event.target_user_login, event.user_name, event.user_login),
       login: normalizeTwitchLogin(event.target_user_login ?? event.target_user_name ?? event.user_login ?? event.user_name),
       source: "twitch",
-    });
+    }));
   }
 
   function mapAutomodHold(event) {
-    const message = withBase({
+    const message = withViewer(withBase({
       id: stringOrFallback(event.message_id, `automod-${Date.now()}`),
       userId: stringOrFallback(event.user_id, event.chatter_user_id),
       author: stringOrFallback(event.user_name, event.user_login, event.chatter_user_name, "Viewer"),
@@ -99,28 +101,29 @@ export function createTwitchEventSubMapper(options = {}) {
       timestamp: Date.now(),
       source: "twitch",
       moderationReason: "AutoMod Twitch",
-    });
+    }));
 
-    return withBase({
+    return withViewer(withBase({
       type: "automod_held",
       messageId: message.id,
       userId: message.userId,
       author: message.author,
       login: message.login,
+      displayName: message.displayName,
       message,
       source: "twitch",
-    });
+    }));
   }
 
   function mapBanOrTimeout(event) {
-    return withBase({
+    return withViewer(withBase({
       type: event.ends_at ? "user_timeout" : "user_banned",
       userId: stringOrFallback(event.user_id),
       author: stringOrFallback(event.user_name, event.user_login),
       login: normalizeTwitchLogin(event.user_login ?? event.user_name),
       expiresAt: event.ends_at ?? null,
       source: "twitch",
-    });
+    }));
   }
 
   function withBase(payload) {
@@ -128,6 +131,23 @@ export function createTwitchEventSubMapper(options = {}) {
       ...payload,
       channel,
     };
+  }
+
+  function withViewer(payload) {
+    const identity = normalizeViewerIdentity(payload);
+    const nextPayload = {
+      ...payload,
+      userId: identity.userId,
+      author: identity.displayName,
+      displayName: identity.displayName,
+      login: identity.login,
+      viewerKey: viewerHistoryKey(identity),
+    };
+
+    if (payload.color !== undefined) nextPayload.color = identity.color || payload.color;
+    if (payload.badges !== undefined) nextPayload.badges = identity.badges;
+
+    return nextPayload;
   }
 
   function enrichBadges(nextBadges) {

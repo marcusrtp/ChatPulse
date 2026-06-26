@@ -465,6 +465,97 @@ await test("live status tracks OBS overlay heartbeat and command acknowledgement
   assert.deepEqual(readCommandAck(storage), ack);
 });
 
+await test("HTTP live sync publishes settings and commands for an OBS browser source", async () => {
+  const {
+    publishLiveConfigHttp,
+    publishLiveCommandHttp,
+    publishOverlayHeartbeatHttp,
+    publishCommandAckHttp,
+  } = await import("../src/core/live-http-sync.js");
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    calls.push({ url, options });
+    return {
+      ok: true,
+      json: async () => ({ ok: true }),
+    };
+  };
+
+  await publishLiveConfigHttp({
+    updatedAt: 1000,
+    automodSimulation: true,
+    overlayConfig: { animation: "fade", maxMessages: 1 },
+  }, { fetchImpl });
+  await publishLiveCommandHttp({
+    id: "command-1",
+    type: "stress-test",
+    createdAt: 1100,
+    payload: { startAt: 1200 },
+  }, { fetchImpl });
+  await publishOverlayHeartbeatHttp({ overlayId: "overlay-1", updatedAt: 1300 }, { fetchImpl });
+  await publishCommandAckHttp({ commandId: "command-1", status: "ok", updatedAt: 1400 }, { fetchImpl });
+
+  assert.deepEqual(calls.map((call) => call.url), [
+    "/api/live-config",
+    "/api/live-command",
+    "/api/overlay-heartbeat",
+    "/api/command-ack",
+  ]);
+  assert.equal(JSON.parse(calls[0].options.body).overlayConfig.animation, "fade");
+  assert.equal(JSON.parse(calls[1].options.body).type, "stress-test");
+  assert.equal(calls.every((call) => call.options.method === "POST"), true);
+});
+
+await test("HTTP live sync poller applies fresh OBS settings and commands once", async () => {
+  const { createLiveStatePoller } = await import("../src/core/live-http-sync.js");
+  const states = [
+    {
+      liveConfig: {
+        updatedAt: 1000,
+        automodSimulation: false,
+        overlayConfig: { animation: "slide", maxMessages: 2 },
+      },
+      liveCommand: { id: "command-old", type: "stress-test", createdAt: 900, payload: {} },
+    },
+    {
+      liveConfig: {
+        updatedAt: 1000,
+        automodSimulation: false,
+        overlayConfig: { animation: "slide", maxMessages: 2 },
+      },
+      liveCommand: { id: "command-1", type: "stress-test", createdAt: 1200, payload: {} },
+    },
+    {
+      liveConfig: {
+        updatedAt: 1300,
+        automodSimulation: true,
+        overlayConfig: { animation: "fade", maxMessages: 1 },
+      },
+      liveCommand: { id: "command-1", type: "stress-test", createdAt: 1200, payload: {} },
+    },
+  ];
+  const appliedConfigs = [];
+  const appliedCommands = [];
+  const fetchImpl = async () => ({
+    ok: true,
+    json: async () => states.shift(),
+  });
+  const poller = createLiveStatePoller({
+    fetchImpl,
+    ignoreCommandsBefore: 1000,
+    onLiveConfig: (config) => appliedConfigs.push(config),
+    onLiveCommand: (command) => appliedCommands.push(command),
+  });
+
+  await poller.poll();
+  await poller.poll();
+  await poller.poll();
+
+  assert.deepEqual(appliedConfigs.map((config) => config.updatedAt), [1000, 1300]);
+  assert.deepEqual(appliedConfigs.map((config) => config.overlayConfig.animation), ["slide", "fade"]);
+  assert.deepEqual(appliedCommands.map((command) => command.id), ["command-1"]);
+});
+
 await test("demo chat source emits deterministic premium-looking test messages", () => {
   const emitted = [];
   const source = createDemoChatSource({
@@ -477,6 +568,9 @@ await test("demo chat source emits deterministic premium-looking test messages",
   assert.equal(emitted.length, 1);
   assert.equal(emitted[0].event, "chat:message");
   assert.equal(emitted[0].payload.author, "CodexUser");
+  assert.equal(emitted[0].payload.displayName, "CodexUser");
+  assert.equal(emitted[0].payload.login, "codexuser");
+  assert.equal(emitted[0].payload.viewerKey, "login:codexuser");
   assert.equal(emitted[0].payload.text, "Test overlay prêt");
   assert.equal(emitted[0].payload.source, "demo");
   assert.ok(emitted[0].payload.id.startsWith("demo-3000-"));
@@ -508,6 +602,27 @@ await test("demo chat source emits Twitch and external visual samples", () => {
   assert.deepEqual(messages[3].fragments.filter((fragment) => fragment.type === "external-emote").map((fragment) => fragment.provider), ["7TV", "BTTV", "FFZ"]);
   assert.equal(emitted.length, 4);
   assert.equal(emitted[3].payload.author, "ComboPremium");
+});
+
+await test("demo chat source can prepare premium visual samples before emitting them", () => {
+  const emitted = [];
+  const source = createDemoChatSource({
+    now: () => 4100,
+    emit: (event, payload) => emitted.push({ event, payload }),
+  });
+
+  const preparedMessages = source.getPremiumTestMessages();
+
+  assert.equal(preparedMessages.length, 4);
+  assert.equal(preparedMessages[0].source, "premium-test");
+  assert.equal(preparedMessages[0].fragments[1].type, "emote");
+  assert.equal(emitted.length, 0);
+
+  const emittedMessages = source.emitPremiumTestMessages(preparedMessages);
+
+  assert.equal(emittedMessages.length, 4);
+  assert.equal(emitted.length, 4);
+  assert.equal(emitted[0].payload.author, preparedMessages[0].author);
 });
 
 
@@ -566,12 +681,14 @@ await test("chat renderer updates the accent color for future preview messages",
 
 await test("stress action enables free visual samples before injection", () => {
   const previousSetTimeout = globalThis.setTimeout;
+  const previousDateNow = Date.now;
   const scheduled = [];
   const emitted = [];
   const appliedConfigs = [];
   const publishedConfigs = [];
   const commands = [];
 
+  Date.now = () => 2000;
   globalThis.setTimeout = (callback, delay) => {
     scheduled.push({ callback, delay });
     return scheduled.length;
@@ -609,8 +726,8 @@ await test("stress action enables free visual samples before injection", () => {
       publishLiveConfig(config) {
         publishedConfigs.push(config);
       },
-      sendLiveCommand(command) {
-        commands.push(command);
+      sendLiveCommand(type, payload) {
+        commands.push({ type, payload });
       },
     });
 
@@ -620,12 +737,20 @@ await test("stress action enables free visual samples before injection", () => {
     assert.equal(elements.externalEmotes.checked, true);
     assert.deepEqual(publishedConfigs, [{ twitchVisuals: true, externalEmotes: true }]);
     assert.equal(appliedConfigs.length, 2);
+    assert.equal(emitted.length, 0);
+    assert.equal(commands.length, 1);
+    assert.equal(commands[0].type, "stress-test");
+    assert.equal(commands[0].payload.totalMessages > 0, true);
+    assert.equal(commands[0].payload.intervalMs, 35);
+    assert.equal(commands[0].payload.startAt > 2000, true);
+    assert.equal(scheduled[0].delay, commands[0].payload.startAt - 2000);
+
+    scheduled.shift().callback();
     assert.equal(emitted.length, 1);
     assert.equal(emitted[0].options.fragments.some((fragment) => fragment.type === "emote"), true);
-    assert.equal(commands.includes("stress-test"), true);
-    assert.equal(scheduled[0].delay, 35);
   } finally {
     globalThis.setTimeout = previousSetTimeout;
+    Date.now = previousDateNow;
   }
 });
 

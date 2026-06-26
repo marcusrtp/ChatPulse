@@ -156,6 +156,23 @@ await test("history view renders the most recent messages first", () => {
   assert.equal(listElement.children[1].children[0].textContent, "Recent");
 });
 
+await test("history view can render only moderated messages", () => {
+  const { documentRef } = createDomHarness();
+  const listElement = createElement("ul");
+  const historyView = createHistoryView({ listElement, documentRef });
+
+  historyView.render([
+    { author: "Visible", text: "Message normal", source: "demo" },
+    { author: "Deleted", text: "Message supprimé", source: "demo", moderationStatus: "deleted" },
+    { author: "Blocked", text: "Message bloqué", source: "demo", moderationStatus: "blocked" },
+    { author: "Removed", text: "Message retiré", source: "demo", moderationStatus: "removed" },
+  ], { moderatedOnly: true });
+
+  assert.equal(listElement.children.length, 3);
+  assert.deepEqual(listElement.children.map((item) => item.children[0].textContent), ["Removed", "Blocked", "Deleted"]);
+  assert.equal(listElement.children.every((item) => item.className !== "history-visible"), true);
+});
+
 await test("history view renders visible message fragments with emotes", () => {
   const { documentRef } = createDomHarness();
   const item = renderHistoryItem({

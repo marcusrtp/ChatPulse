@@ -17,12 +17,19 @@ export function createHistoryView({ listElement, documentRef = globalThis.docume
   });
 
   return {
-    render(messages = []) {
-      const recentMessages = messages.slice(-maxItems).reverse();
+    render(messages = [], options = {}) {
+      const sourceMessages = options.moderatedOnly
+        ? messages.filter(isModeratedHistoryMessage)
+        : messages;
+      const recentMessages = sourceMessages.slice(-maxItems).reverse();
       listElement.replaceChildren(...recentMessages.map((message) => renderHistoryItem(message, { documentRef })));
     },
     toggleReveal: toggleModeratedHistoryReveal,
   };
+}
+
+export function isModeratedHistoryMessage(message = {}) {
+  return ["blocked", "deleted", "removed"].includes(message.moderationStatus);
 }
 
 export function renderHistoryItem(message, { documentRef = globalThis.document } = {}) {

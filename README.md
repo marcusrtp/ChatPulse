@@ -13,6 +13,7 @@ Le premier sprint prouve la valeur principale sans cout serveur : afficher un ov
 - OAuth optionnel : ChatPulse reste utilisable en demo, stress test et configuration sans identification.
 - Moderation cote rendu : messages supprimes, bloques AutoMod, bannis, timeout ou purges sont retires de l'overlay et conserves dans l'historique/diagnostic.
 - Handshake OBS : le panneau detecte si l'overlay OBS charge est vivant, si les reglages correspondent et si les commandes sont recues.
+- Reglages OBS a chaud : l'overlay garde la meme URL et recupere les changements via le serveur local `127.0.0.1:8080`, meme si OBS n'a pas le meme stockage navigateur que le panneau.
 - Maintenabilite : le panneau delegue le formulaire, le handshake OBS, la session Twitch et les actions de simulation a des modules dedies.
 - Simulations live isolees : stress test, notification OBS, suppression test et AutoMod restent testables hors du controle principal.
 - Visuels Twitch gratuits : l'option `Badges et emotes Twitch officiels` active badges, couleurs de pseudo et emotes.
@@ -56,6 +57,8 @@ Ouvre ensuite `http://127.0.0.1:8080/`. OBS doit utiliser une URL HTTP locale pl
 9. Garde le panneau ouvert pendant les tests : les reglages et boutons de test sont envoyes a l'overlay deja charge.
 10. Surveille la carte `OBS` : elle confirme si la source OBS est detectee et si la derniere commande a ete recue.
 11. Surveille aussi `Visuels Twitch` pour savoir si ChatPulse utilise les assets reels ou un fallback.
+
+Important : si le serveur local reste lance sur `127.0.0.1:8080`, tu peux changer les options du panneau sans recoller l'URL OBS. Couleur, animation, taille, opacite, nombre de messages, badges, emotes et commandes de test sont synchronises a chaud.
 
 ## Etat des visuels Twitch
 

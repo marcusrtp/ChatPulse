@@ -1,4 +1,5 @@
 import { twitchPreviewBadges } from "../twitch/preview-badges.js";
+import { normalizeViewerIdentity, viewerHistoryKey } from "../core/viewer-identity.js";
 
 const SAMPLE_MESSAGES = [
   ["NovaCaster", "Overlay en ligne, le chat est lisible."],
@@ -90,8 +91,17 @@ export function createDemoChatSource(options = {}) {
     });
   }
 
-  function emitPremiumTestMessages() {
-    return PREMIUM_TWITCH_TEST_MESSAGES.map((message) => emitMessage({
+  function getPremiumTestMessages() {
+    return PREMIUM_TWITCH_TEST_MESSAGES.map((message) => ({
+      ...message,
+      badges: cloneBadges(message.badges),
+      fragments: message.fragments.map((fragment) => ({ ...fragment })),
+      source: "premium-test",
+    }));
+  }
+
+  function emitPremiumTestMessages(messages = getPremiumTestMessages()) {
+    return messages.map((message) => emitMessage({
       ...message,
       source: "premium-test",
     }));
@@ -99,15 +109,23 @@ export function createDemoChatSource(options = {}) {
 
   function emitMessage(input = {}) {
     const text = String(input.text || "Ceci est un message de test");
+    const identity = normalizeViewerIdentity({
+      ...input,
+      badges: Array.isArray(input.badges) ? input.badges : ["demo"],
+    });
     const message = {
       id: `demo-${now()}-${index++}`,
-      author: String(input.author || "UtilisateurDémo"),
+      author: identity.displayName,
+      displayName: identity.displayName,
+      login: identity.login,
+      userId: identity.userId,
+      viewerKey: viewerHistoryKey(identity),
       text,
       fragments: normalizeFragments(input.fragments, text),
       timestamp: now(),
       source: String(input.source || "demo"),
-      badges: Array.isArray(input.badges) ? input.badges : ["demo"],
-      color: input.color,
+      badges: identity.badges,
+      color: identity.color || undefined,
     };
     emit("chat:message", message);
     return message;
@@ -129,7 +147,13 @@ export function createDemoChatSource(options = {}) {
     }
   }
 
-  return { emitTestMessage, emitPremiumTestMessages, start, stop };
+  return { emitTestMessage, getPremiumTestMessages, emitPremiumTestMessages, start, stop };
+}
+
+function cloneBadges(badges) {
+  if (!Array.isArray(badges)) return [];
+
+  return badges.map((badge) => (badge && typeof badge === "object" ? { ...badge } : badge));
 }
 
 function normalizeFragments(fragments, fallbackText) {

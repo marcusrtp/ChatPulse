@@ -93,7 +93,7 @@ export function createOverlayConfigHash(input = {}) {
   ].join("|");
 }
 
-function normalizeOverlayHeartbeat(input = {}) {
+export function normalizeOverlayHeartbeat(input = {}) {
   return {
     overlayId: stringValue(input.overlayId),
     configHash: stringValue(input.configHash),
@@ -104,7 +104,7 @@ function normalizeOverlayHeartbeat(input = {}) {
   };
 }
 
-function normalizeCommandAck(input = {}) {
+export function normalizeCommandAck(input = {}) {
   return {
     commandId: stringValue(input.commandId),
     type: stringValue(input.type),

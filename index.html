@@ -247,9 +247,12 @@
       </section>
 
       <section class="workspace-panel history-panel compact-feed-panel" aria-labelledby="history-title">
-        <div class="panel-heading compact">
-          <p class="eyebrow">Historique</p>
-          <h2 id="history-title">Messages reçus</h2>
+        <div class="panel-heading compact history-heading">
+          <div>
+            <p class="eyebrow">Historique</p>
+            <h2 id="history-title">Messages reçus</h2>
+          </div>
+          <button id="history-moderated-filter" class="history-filter-button" type="button" aria-pressed="false">Messages modérés (0)</button>
         </div>
         <ol id="message-history" class="message-history"></ol>
       </section>

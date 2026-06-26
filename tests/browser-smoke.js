@@ -53,8 +53,10 @@ try {
   const externalEmotes = await fetch(`${baseUrl}/src/chat/external-emotes.js`).then((response) => response.text());
   const stressFixtures = await fetch(`${baseUrl}/src/chat/stress-fixtures.js`).then((response) => response.text());
   const simulationActions = await fetch(`${baseUrl}/src/ui/simulation-actions.js`).then((response) => response.text());
+  const liveHttpSync = await fetch(`${baseUrl}/src/core/live-http-sync.js`).then((response) => response.text());
   const twitchSessionController = await fetch(`${baseUrl}/src/twitch/session-controller.js`).then((response) => response.text());
   const twitchChatAssets = await fetch(`${baseUrl}/src/twitch/chat-assets.js`).then((response) => response.text());
+  const devServer = await readFile(join(root, "tools/dev-server.js"), "utf8");
 
   assert.match(control, /ChatPulse/);
   assert.match(control, /URL OBS/);
@@ -183,6 +185,10 @@ try {
   assert.equal(controlApp.includes("function emitAutomodProbe"), false);
   assert.match(controlApp, /automodSimulation: simulationActions\.isAutomodEnabled\(\)/);
   assert.match(controlApp, /writeLiveConfig\(globalThis\.localStorage/);
+  assert.match(controlApp, /publishLiveConfigHttp/);
+  assert.match(controlApp, /createViewerHistoryStore/);
+  assert.match(controlApp, /viewerHistoryStore\.recordMessage/);
+  assert.match(controlApp, /viewerHistoryStore\.recordModeration/);
   assert.match(controlApp, /overlayConfig: nextConfig/);
   assert.equal(controlApp.includes("function updateObsConnectionStatus"), false);
   assert.match(controlApp, /sendLiveCommand\("test-message"/);
@@ -214,6 +220,8 @@ try {
   assert.match(controlForm, /function syncPreciseInputs/);
   assert.match(obsConnectionMonitor, /createObsConnectionMonitor/);
   assert.match(obsConnectionMonitor, /writeLiveCommand/);
+  assert.match(obsConnectionMonitor, /publishLiveCommandHttp/);
+  assert.match(obsConnectionMonitor, /readLiveStateHttp/);
   assert.match(obsConnectionMonitor, /readOverlayHeartbeat/);
   assert.match(obsConnectionMonitor, /readCommandAck/);
   assert.match(obsConnectionMonitor, /isOverlayHeartbeatFresh/);
@@ -340,12 +348,16 @@ try {
   assert.match(overlayApp, /setInterval\(sendOverlayHeartbeat, 2000\)/);
   assert.match(overlayApp, /applyLiveCommand/);
   assert.match(overlayApp, /test-message/);
+  assert.match(overlayApp, /runStressTest\(command\.payload\)/);
   assert.match(overlayApp, /obs-notification/);
   assert.match(overlayApp, /delete-message/);
   assert.match(overlayApp, /Réglages OBS mis à jour sans rechargement/);
   assert.match(overlayApp, /automod: params\.get\("automod"\)/);
   assert.match(overlayApp, /LIVE_CONFIG_STORAGE_KEY/);
   assert.match(overlayApp, /addEventListener\("storage"/);
+  assert.match(overlayApp, /createLiveStatePoller/);
+  assert.match(overlayApp, /publishOverlayHeartbeatHttp/);
+  assert.match(overlayApp, /publishCommandAckHttp/);
   assert.match(overlayApp, /applyLiveConfig/);
   assert.match(overlayApp, /emitAutomodProbe/);
   assert.match(overlayApp, /banword/);
@@ -359,6 +371,13 @@ try {
   assert.match(overlayCss, /background: transparent/);
   assert.match(overlayCss, /max-height: 100%/);
   assert.match(overlayCss, /overflow: hidden/);
+  assert.match(liveHttpSync, /LIVE_STATE_ENDPOINT/);
+  assert.match(liveHttpSync, /createLiveStatePoller/);
+  assert.match(devServer, /\/api\/live-state/);
+  assert.match(devServer, /\/api\/live-config/);
+  assert.match(devServer, /\/api\/live-command/);
+  assert.match(devServer, /\/api\/overlay-heartbeat/);
+  assert.match(devServer, /\/api\/command-ack/);
   assert.equal(control.includes("access_token"), false);
   assert.equal(overlay.includes("access_token"), false);
 

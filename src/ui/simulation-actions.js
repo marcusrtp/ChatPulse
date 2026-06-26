@@ -1,5 +1,8 @@
 import { STRESS_TEST_TOTAL, emitStressTestMessages } from "../chat/stress-fixtures.js";
 
+export const LIVE_ACTION_START_DELAY_MS = 180;
+export const STRESS_TEST_INTERVAL_MS = 35;
+
 export function createSimulationActions({
   elements,
   bus,
@@ -26,7 +29,7 @@ export function createSimulationActions({
   function handleIncomingMessage(message) {
     if (!shouldBlockByAutomod(message)) return false;
 
-    getRenderer().applyModeration({
+    bus.emit("chat:moderation", {
       type: "automod_held",
       message: {
         ...message,
@@ -39,10 +42,17 @@ export function createSimulationActions({
 
   function runStressTest() {
     ensureStressVisualOptions();
-    emitStressTestMessages(demoSource, { intervalMs: 35 });
+    const startAt = Date.now() + LIVE_ACTION_START_DELAY_MS;
+    const stressOptions = {
+      totalMessages: STRESS_TEST_TOTAL,
+      intervalMs: STRESS_TEST_INTERVAL_MS,
+      startAt,
+    };
+
+    sendLiveCommand("stress-test", stressOptions);
+    emitStressTestMessages(demoSource, stressOptions);
 
     diagnostics.warn("demo", `${STRESS_TEST_TOTAL} messages injectés progressivement avec badges, emotes et couleurs pour tester la saturation.`);
-    sendLiveCommand("stress-test");
     renderDiagnostics();
   }
 
